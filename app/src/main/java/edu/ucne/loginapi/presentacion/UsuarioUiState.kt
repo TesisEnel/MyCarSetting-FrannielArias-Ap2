@@ -11,5 +11,7 @@ data class UsuarioUiState(
     val error: String? = null,
     val message: String? = null,
     val isSheetVisible: Boolean = false,
-    val listaUsuarios: Resource<List<Usuarios>> = Resource.Loading()
+    val listaUsuarios: Resource<List<Usuarios>> = Resource.Loading(),
+    val isLoggedIn: Boolean = false,
+    val currentUser: Usuarios? = null
 )

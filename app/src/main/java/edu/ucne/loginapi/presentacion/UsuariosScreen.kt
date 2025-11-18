@@ -2,6 +2,8 @@ package edu.ucne.loginapi.presentacion
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -21,15 +23,13 @@ import edu.ucne.loginapi.domain.model.Usuarios
 @Composable
 fun UsuariosScreen(
     viewModel: UsuariosViewModel = hiltViewModel(),
-    onLoginSuccess: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
     UsuariosScreenBody(
         state = state,
-        onEvent = viewModel::onEvent,
-        onLoginSuccess = onLoginSuccess
+        onEvent = viewModel::onEvent
     )
 }
 
@@ -37,143 +37,195 @@ fun UsuariosScreen(
 @Composable
 fun UsuariosScreenBody(
     state: UsuarioUiState,
-    onEvent: (UsuariosUiEvent) -> Unit,
-    onLoginSuccess: () -> Unit = {}
+    onEvent: (UsuariosUiEvent) -> Unit
 ) {
     var passwordVisible by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState()
 
-    Scaffold { padding ->
+    Scaffold(
+        topBar = {
+            if (state.isLoggedIn) {
+                TopAppBar(
+                    title = { Text("Mi App") },
+                    actions = {
+                        IconButton(onClick = { onEvent(UsuariosUiEvent.Logout) }) {
+                            Icon(
+                                imageVector = Icons.Default.ExitToApp,
+                                contentDescription = "Cerrar sesión"
+                            )
+                        }
+                    }
+                )
+            }
+        }
+    ) { padding ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            if (state.isLoading) {
-                CircularProgressIndicator(
-                    modifier = Modifier.align(Alignment.Center)
-                )
-            } else {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 32.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Text(
-                        text = "Iniciar Sesión",
-                        style = MaterialTheme.typography.headlineLarge,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(bottom = 32.dp)
+            when {
+                state.isLoading -> {
+                    CircularProgressIndicator(
+                        modifier = Modifier.align(Alignment.Center)
                     )
-
-                    // Email or Username Field
-                    OutlinedTextField(
-                        value = state.userName,
-                        onValueChange = { onEvent(UsuariosUiEvent.UserNameChange(it)) },
-                        label = { Text("Email or username") },
-                        placeholder = { Text("Email or username") },
-                        singleLine = true,
+                }
+                state.isLoggedIn && state.currentUser != null -> {
+                    Column(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 16.dp),
-                        isError = state.error != null
-                    )
-
-                    // Password Field
-                    OutlinedTextField(
-                        value = state.password,
-                        onValueChange = { onEvent(UsuariosUiEvent.PasswordChange(it)) },
-                        label = { Text("Password") },
-                        placeholder = { Text("Password") },
-                        singleLine = true,
-                        visualTransformation = if (passwordVisible)
-                            VisualTransformation.None
-                        else
-                            PasswordVisualTransformation(),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                        trailingIcon = {
-                            IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                                Text(
-                                    text = if (passwordVisible) "👁️" else "👁️‍🗨️",
-                                    style = MaterialTheme.typography.bodyLarge
-                                )
-                            }
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 8.dp),
-                        isError = state.error != null
-                    )
-
-                    // Error Message
-                    if (state.error != null) {
-                        Text(
-                            text = state.error,
-                            color = MaterialTheme.colorScheme.error,
-                            style = MaterialTheme.typography.bodySmall,
-                            modifier = Modifier.padding(bottom = 16.dp)
-                        )
-                    }
-
-                    // Success Message
-                    if (state.message != null) {
-                        Text(
-                            text = state.message,
-                            color = MaterialTheme.colorScheme.primary,
-                            style = MaterialTheme.typography.bodySmall,
-                            modifier = Modifier.padding(bottom = 16.dp)
-                        )
-                    }
-
-                    // Login Button
-                    Button(
-                        onClick = {
-                            if (state.userName.isNotBlank() && state.password.isNotBlank()) {
-                                // Aquí puedes agregar lógica de login
-                                onLoginSuccess()
-                            }
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(56.dp)
-                            .padding(bottom = 24.dp),
-                        enabled = state.userName.isNotBlank() && state.password.isNotBlank(),
-                        shape = MaterialTheme.shapes.extraLarge
+                            .fillMaxSize()
+                            .padding(32.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
                     ) {
                         Text(
-                            text = "Log in",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
+                            text = "¡Hola ${state.currentUser.userName}!",
+                            style = MaterialTheme.typography.headlineLarge,
+                            fontWeight = FontWeight.Bold,
+                            textAlign = TextAlign.Center
                         )
-                    }
 
-                    // Register Link
-                    Row(
-                        horizontalArrangement = Arrangement.Center,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
+                        Spacer(modifier = Modifier.height(16.dp))
+
                         Text(
-                            text = "No tienes Usuario?",
-                            style = MaterialTheme.typography.bodyMedium
+                            text = "Bienvenido a mi app",
+                            style = MaterialTheme.typography.headlineMedium,
+                            textAlign = TextAlign.Center,
+                            color = MaterialTheme.colorScheme.primary
                         )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        TextButton(
-                            onClick = { onEvent(UsuariosUiEvent.ShowBottonSheet) }
+
+                        Spacer(modifier = Modifier.height(48.dp))
+
+                        Button(
+                            onClick = { onEvent(UsuariosUiEvent.Logout) },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(56.dp),
+                            shape = MaterialTheme.shapes.extraLarge
                         ) {
                             Text(
-                                text = "Crealo aquí",
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.Bold,
-                                textDecoration = TextDecoration.Underline
+                                text = "Cerrar Sesión",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
                             )
+                        }
+                    }
+                }
+                else -> {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 32.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Text(
+                            text = "Iniciar Sesión",
+                            style = MaterialTheme.typography.headlineLarge,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(bottom = 48.dp)
+                        )
+
+                        OutlinedTextField(
+                            value = state.userName,
+                            onValueChange = { onEvent(UsuariosUiEvent.UserNameChange(it)) },
+                            label = { Text("Nombre de usuario") },
+                            placeholder = { Text("Ingrese su usuario") },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth(),
+                            isError = state.error != null
+                        )
+
+                        Spacer(modifier = Modifier.height(24.dp))
+
+                        OutlinedTextField(
+                            value = state.password,
+                            onValueChange = { onEvent(UsuariosUiEvent.PasswordChange(it)) },
+                            label = { Text("Contraseña") },
+                            placeholder = { Text("Ingrese su contraseña") },
+                            singleLine = true,
+                            visualTransformation = if (passwordVisible)
+                                VisualTransformation.None
+                            else
+                                PasswordVisualTransformation(),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                            trailingIcon = {
+                                IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                                    Text(
+                                        text = if (passwordVisible) "👁️" else "👁️‍🗨️",
+                                        style = MaterialTheme.typography.bodyLarge
+                                    )
+                                }
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            isError = state.error != null
+                        )
+
+                        if (state.error != null) {
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text(
+                                text = state.error,
+                                color = MaterialTheme.colorScheme.error,
+                                style = MaterialTheme.typography.bodySmall,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+
+                        if (state.message != null) {
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text(
+                                text = state.message,
+                                color = MaterialTheme.colorScheme.primary,
+                                style = MaterialTheme.typography.bodySmall,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(32.dp))
+
+                        Button(
+                            onClick = { onEvent(UsuariosUiEvent.Login) },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(56.dp),
+                            enabled = state.userName.isNotBlank() && state.password.isNotBlank(),
+                            shape = MaterialTheme.shapes.extraLarge
+                        ) {
+                            Text(
+                                text = "Log in",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(24.dp))
+
+                        Row(
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "No tienes Usuario?",
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            TextButton(
+                                onClick = { onEvent(UsuariosUiEvent.ShowBottonSheet) }
+                            ) {
+                                Text(
+                                    text = "Crealo aquí",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    textDecoration = TextDecoration.Underline
+                                )
+                            }
                         }
                     }
                 }
             }
 
-            // Bottom Sheet para Registro
             if (state.isSheetVisible) {
                 ModalBottomSheet(
                     onDismissRequest = {
@@ -189,7 +241,7 @@ fun UsuariosScreenBody(
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
                         Text(
-                            text = if (state.usuariosIs > 0) "Editar Usuario" else "Nuevo Usuario",
+                            text = "Nuevo Usuario",
                             style = MaterialTheme.typography.headlineSmall,
                             fontWeight = FontWeight.Bold,
                             textAlign = TextAlign.Center,
@@ -216,6 +268,16 @@ fun UsuariosScreenBody(
                             modifier = Modifier.fillMaxWidth()
                         )
 
+                        if (state.error != null) {
+                            Text(
+                                text = state.error,
+                                color = MaterialTheme.colorScheme.error,
+                                style = MaterialTheme.typography.bodySmall,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             modifier = Modifier.fillMaxWidth()
@@ -233,7 +295,7 @@ fun UsuariosScreenBody(
                                 onClick = {
                                     if (state.userName.isNotBlank() && state.password.isNotBlank()) {
                                         val usuario = Usuarios(
-                                            usuarioId = if (state.usuariosIs > 0) state.usuariosIs else null,
+                                            usuarioId = null,
                                             userName = state.userName,
                                             password = state.password
                                         )
@@ -260,7 +322,8 @@ fun UsuariosScreenPreview() {
         userName = "",
         password = "",
         isLoading = false,
-        isSheetVisible = false
+        isSheetVisible = false,
+        isLoggedIn = false
     )
     MaterialTheme {
         UsuariosScreenBody(

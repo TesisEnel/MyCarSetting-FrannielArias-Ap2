@@ -15,9 +15,12 @@ interface UsuariosApi {
     @GET("api/Usuarios/{id}")
     suspend fun getUsuario(@Path("id")id: Int): List<UsuariosDto>
 
-    @POST("api/Usuarios/{id}")
+    @POST("api/Usuarios")
     suspend fun saveUsuarios(@Body usuariosDto: UsuariosDto)
 
     @PUT("api/Usuarios/{id}")
     suspend fun updateUsuarios(@Body usuariosDto: UsuariosDto)
+
+    @POST("api/Usuarios/login")
+    suspend fun login(@Body credentials: UsuariosDto): UsuariosDto
 }
