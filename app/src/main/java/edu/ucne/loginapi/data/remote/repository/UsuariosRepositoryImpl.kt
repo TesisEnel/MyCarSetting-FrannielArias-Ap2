@@ -1,12 +1,11 @@
-package edu.ucne.loginapi.data.repository
+package edu.ucne.loginapi.data.remote.repository
 
 import android.util.Log
 import retrofit2.HttpException
-import edu.ucne.loginapi.data.mappers.toDomain
-import edu.ucne.loginapi.data.mappers.toDto
+import edu.ucne.loginapi.data.remote.mappers.toDomain
+import edu.ucne.loginapi.data.remote.mappers.toDto
 import edu.ucne.loginapi.data.remote.RemoteDataSource
 import edu.ucne.loginapi.data.remote.Resource
-import edu.ucne.loginapi.data.remote.dto.UsuariosDto
 import edu.ucne.loginapi.domain.model.Usuarios
 import edu.ucne.loginapi.domain.repository.UsuariosRepository
 import kotlinx.coroutines.flow.Flow

@@ -1,4 +1,4 @@
-package edu.ucne.loginapi.presentacion
+package edu.ucne.loginapi.presentation
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
@@ -22,8 +22,7 @@ import edu.ucne.loginapi.domain.model.Usuarios
 
 @Composable
 fun UsuariosScreen(
-    viewModel: UsuariosViewModel = hiltViewModel(),
-    modifier: Modifier = Modifier
+    viewModel: UsuarioViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
@@ -37,7 +36,7 @@ fun UsuariosScreen(
 @Composable
 fun UsuariosScreenBody(
     state: UsuarioUiState,
-    onEvent: (UsuariosUiEvent) -> Unit
+    onEvent: (UsuarioEvent) -> Unit
 ) {
     var passwordVisible by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState()
@@ -48,7 +47,7 @@ fun UsuariosScreenBody(
                 TopAppBar(
                     title = { Text("Mi App") },
                     actions = {
-                        IconButton(onClick = { onEvent(UsuariosUiEvent.Logout) }) {
+                        IconButton(onClick = { onEvent(UsuarioEvent.Logout) }) {
                             Icon(
                                 imageVector = Icons.Default.ExitToApp,
                                 contentDescription = "Cerrar sesión"
@@ -97,7 +96,7 @@ fun UsuariosScreenBody(
                         Spacer(modifier = Modifier.height(48.dp))
 
                         Button(
-                            onClick = { onEvent(UsuariosUiEvent.Logout) },
+                            onClick = { onEvent(UsuarioEvent.Logout) },
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(56.dp),
@@ -128,7 +127,7 @@ fun UsuariosScreenBody(
 
                         OutlinedTextField(
                             value = state.userName,
-                            onValueChange = { onEvent(UsuariosUiEvent.UserNameChange(it)) },
+                            onValueChange = { onEvent(UsuarioEvent.UserNameChange(it)) },
                             label = { Text("Nombre de usuario") },
                             placeholder = { Text("Ingrese su usuario") },
                             singleLine = true,
@@ -140,7 +139,7 @@ fun UsuariosScreenBody(
 
                         OutlinedTextField(
                             value = state.password,
-                            onValueChange = { onEvent(UsuariosUiEvent.PasswordChange(it)) },
+                            onValueChange = { onEvent(UsuarioEvent.PasswordChange(it)) },
                             label = { Text("Contraseña") },
                             placeholder = { Text("Ingrese su contraseña") },
                             singleLine = true,
@@ -186,7 +185,7 @@ fun UsuariosScreenBody(
                         Spacer(modifier = Modifier.height(32.dp))
 
                         Button(
-                            onClick = { onEvent(UsuariosUiEvent.Login) },
+                            onClick = { onEvent(UsuarioEvent.Login) },
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(56.dp),
@@ -212,7 +211,7 @@ fun UsuariosScreenBody(
                             )
                             Spacer(modifier = Modifier.width(4.dp))
                             TextButton(
-                                onClick = { onEvent(UsuariosUiEvent.ShowBottonSheet) }
+                                onClick = { onEvent(UsuarioEvent.ShowBottonSheet) }
                             ) {
                                 Text(
                                     text = "Crealo aquí",
@@ -229,7 +228,7 @@ fun UsuariosScreenBody(
             if (state.isSheetVisible) {
                 ModalBottomSheet(
                     onDismissRequest = {
-                        onEvent(UsuariosUiEvent.HideBottonSheet)
+                        onEvent(UsuarioEvent.HideBottonSheet)
                     },
                     sheetState = sheetState
                 ) {
@@ -250,7 +249,7 @@ fun UsuariosScreenBody(
 
                         OutlinedTextField(
                             value = state.userName,
-                            onValueChange = { onEvent(UsuariosUiEvent.UserNameChange(it)) },
+                            onValueChange = { onEvent(UsuarioEvent.UserNameChange(it)) },
                             label = { Text("Nombre de Usuario") },
                             placeholder = { Text("Ingrese su nombre de usuario") },
                             singleLine = true,
@@ -259,7 +258,7 @@ fun UsuariosScreenBody(
 
                         OutlinedTextField(
                             value = state.password,
-                            onValueChange = { onEvent(UsuariosUiEvent.PasswordChange(it)) },
+                            onValueChange = { onEvent(UsuarioEvent.PasswordChange(it)) },
                             label = { Text("Contraseña") },
                             placeholder = { Text("Ingrese su contraseña") },
                             singleLine = true,
@@ -284,7 +283,7 @@ fun UsuariosScreenBody(
                         ) {
                             OutlinedButton(
                                 onClick = {
-                                    onEvent(UsuariosUiEvent.HideBottonSheet)
+                                    onEvent(UsuarioEvent.HideBottonSheet)
                                 },
                                 modifier = Modifier.weight(1f)
                             ) {
@@ -299,7 +298,7 @@ fun UsuariosScreenBody(
                                             userName = state.userName,
                                             password = state.password
                                         )
-                                        onEvent(UsuariosUiEvent.Crear(usuario))
+                                        onEvent(UsuarioEvent.Crear(usuario))
                                     }
                                 },
                                 modifier = Modifier.weight(1f),

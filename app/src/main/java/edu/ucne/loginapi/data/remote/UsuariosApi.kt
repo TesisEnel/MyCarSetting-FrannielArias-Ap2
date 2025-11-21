@@ -20,7 +20,4 @@ interface UsuariosApi {
 
     @PUT("api/Usuarios/{id}")
     suspend fun updateUsuarios(@Body usuariosDto: UsuariosDto)
-
-    @POST("api/Usuarios/login")
-    suspend fun login(@Body credentials: UsuariosDto): UsuariosDto
 }

@@ -8,7 +8,7 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import edu.ucne.loginapi.data.remote.UsuariosApi
-import edu.ucne.loginapi.data.repository.UsuariosRepositoryImpl
+import edu.ucne.loginapi.data.remote.repository.UsuariosRepositoryImpl
 import edu.ucne.loginapi.domain.repository.UsuariosRepository
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -18,7 +18,7 @@ import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
-object ApiModule {
+object AppModule {
     private const val BASE_URL = "https://gestionhuacalesapi.azurewebsites.net/"
 
     @Provides

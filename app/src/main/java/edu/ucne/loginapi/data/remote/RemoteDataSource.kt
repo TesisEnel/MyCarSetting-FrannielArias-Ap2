@@ -4,18 +4,18 @@ import edu.ucne.loginapi.data.remote.dto.UsuariosDto
 import javax.inject.Inject
 
 class RemoteDataSource @Inject constructor(
-    private val usuariosApi: UsuariosApi
+    private val api: UsuariosApi
 ) {
     suspend fun getUsuarios(): List<UsuariosDto>{
-        return usuariosApi.getUsuarios()
+        return api.getUsuarios()
     }
     suspend fun getUsuario(id: Int): List<UsuariosDto>{
-        return usuariosApi.getUsuario(id)
+        return api.getUsuario(id)
     }
     suspend fun saveUsuarios(usuariosDto: UsuariosDto){
-        return usuariosApi.saveUsuarios(usuariosDto)
+        return api.saveUsuarios(usuariosDto)
     }
     suspend fun updateUsuarios(usuariosDto: UsuariosDto){
-        return usuariosApi.updateUsuarios(usuariosDto)
+        return api.updateUsuarios(usuariosDto)
     }
 }

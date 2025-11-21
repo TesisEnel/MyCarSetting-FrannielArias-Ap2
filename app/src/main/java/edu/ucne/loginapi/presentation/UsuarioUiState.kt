@@ -1,10 +1,10 @@
-package edu.ucne.loginapi.presentacion
+package edu.ucne.loginapi.presentation
 
 import edu.ucne.loginapi.data.remote.Resource
 import edu.ucne.loginapi.domain.model.Usuarios
 
 data class UsuarioUiState(
-    val usuariosIs: Int = 0,
+    val usuariosId: Int = 0,
     val userName: String = "",
     val password: String = "",
     val isLoading: Boolean = false,
