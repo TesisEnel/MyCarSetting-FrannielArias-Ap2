@@ -7,9 +7,9 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import edu.ucne.loginapi.data.remote.UsuariosApi
-import edu.ucne.loginapi.data.remote.api.ChatApiService
-import edu.ucne.loginapi.data.remote.api.ManualApiService
-import edu.ucne.loginapi.data.remote.api.MaintenanceApiService
+import edu.ucne.loginapi.data.remote.apiService.ChatApiService
+import edu.ucne.loginapi.data.remote.apiService.ManualApiService
+import edu.ucne.loginapi.data.remote.apiService.MaintenanceApiService
 import javax.inject.Singleton
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
