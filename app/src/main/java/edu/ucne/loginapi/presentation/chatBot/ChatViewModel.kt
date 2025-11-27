@@ -75,15 +75,10 @@ class ChatViewModel @Inject constructor(
 
         viewModelScope.launch {
             _state.update { it.copy(inputText = "") }
-            when (val result = sendChatMessageLocalUseCase(message)) {
-                is Resource.Success -> {
-                }
-                is Resource.Error -> {
-                    _state.update {
-                        it.copy(userMessage = result.message ?: "Error al enviar mensaje")
-                    }
-                }
-                is Resource.Loading -> {
+            val result = sendChatMessageLocalUseCase(message)
+            if (result is Resource.Error) {
+                _state.update {
+                    it.copy(userMessage = result.message ?: "Error al enviar mensaje")
                 }
             }
         }
@@ -100,8 +95,7 @@ class ChatViewModel @Inject constructor(
                         it.copy(userMessage = result.message ?: "Error al limpiar conversación")
                     }
                 }
-                is Resource.Loading -> {
-                }
+                is Resource.Loading -> Unit
             }
         }
     }
