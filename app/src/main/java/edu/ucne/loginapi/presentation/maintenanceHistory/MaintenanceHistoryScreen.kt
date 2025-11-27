@@ -34,8 +34,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import edu.ucne.loginapi.presentation.maintenanceHistory.MaintenanceHistoryUiState
-import edu.ucne.loginapi.presentation.maintenanceHistory.MaintenanceHistoryViewModel
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.Date
