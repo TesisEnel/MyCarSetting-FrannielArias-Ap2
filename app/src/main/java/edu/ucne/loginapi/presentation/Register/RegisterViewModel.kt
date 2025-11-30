@@ -26,16 +26,26 @@ class RegisterViewModel @Inject constructor(
             is RegisterEvent.UserNameChange -> {
                 _state.update { it.copy(userName = event.value, error = null, message = null) }
             }
+
             is RegisterEvent.PasswordChange -> {
                 _state.update { it.copy(password = event.value, error = null, message = null) }
             }
+
             is RegisterEvent.ConfirmPasswordChange -> {
-                _state.update { it.copy(confirmPassword = event.value, error = null, message = null) }
+                _state.update {
+                    it.copy(
+                        confirmPassword = event.value,
+                        error = null,
+                        message = null
+                    )
+                }
             }
+
             RegisterEvent.Submit -> submit()
             RegisterEvent.MessageShown -> {
                 _state.update { it.copy(message = null, error = null) }
             }
+
             RegisterEvent.NavigationHandled -> {
                 _state.update { it.copy(navigateBack = false) }
             }
@@ -85,6 +95,7 @@ class RegisterViewModel @Inject constructor(
                         )
                     }
                 }
+
                 is Resource.Error -> {
                     _state.update {
                         it.copy(
@@ -93,6 +104,7 @@ class RegisterViewModel @Inject constructor(
                         )
                     }
                 }
+
                 is Resource.Loading -> {
                     _state.update { it.copy(isLoading = true) }
                 }
