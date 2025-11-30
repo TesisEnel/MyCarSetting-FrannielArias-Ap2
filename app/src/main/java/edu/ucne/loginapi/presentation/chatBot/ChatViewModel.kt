@@ -25,17 +25,12 @@ class ChatViewModel @Inject constructor(
     private val _state = MutableStateFlow(ChatUiState())
     val state: StateFlow<ChatUiState> = _state.asStateFlow()
 
-    init {
-        onEvent(ChatEvent.LoadInitialData)
-    }
-
     fun onEvent(event: ChatEvent) {
         when (event) {
-            ChatEvent.LoadInitialData -> loadMessages()
+            is ChatEvent.Initialize -> initialize(event.conversationId)
             is ChatEvent.OnInputChange -> {
                 _state.update { it.copy(inputText = event.value) }
             }
-
             ChatEvent.OnSendMessage -> sendMessage()
             ChatEvent.OnClearConversation -> clearConversation()
             ChatEvent.OnUserMessageShown -> {
@@ -44,10 +39,20 @@ class ChatViewModel @Inject constructor(
         }
     }
 
+    private fun initialize(conversationId: String) {
+        val currentId = _state.value.conversationId
+        if (currentId == conversationId && currentId.isNotBlank()) return
+        _state.update { it.copy(conversationId = conversationId) }
+        loadMessages()
+    }
+
     private fun loadMessages() {
+        val conversationId = _state.value.conversationId
+        if (conversationId.isBlank()) return
+
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true) }
-            observeChatMessagesUseCase(_state.value.conversationId).collectLatest { list ->
+            observeChatMessagesUseCase(conversationId).collectLatest { list ->
                 _state.update {
                     it.copy(
                         messages = list,
@@ -60,12 +65,13 @@ class ChatViewModel @Inject constructor(
 
     private fun sendMessage() {
         val text = _state.value.inputText.trim()
-        if (text.isBlank()) return
+        val conversationId = _state.value.conversationId
+        if (text.isBlank() || conversationId.isBlank()) return
 
         viewModelScope.launch {
             _state.update { it.copy(inputText = "") }
             val result = sendChatMessageWithAssistantUseCase(
-                conversationId = _state.value.conversationId,
+                conversationId = conversationId,
                 text = text
             )
             if (result is Resource.Error) {
@@ -77,8 +83,10 @@ class ChatViewModel @Inject constructor(
     }
 
     private fun clearConversation() {
+        val conversationId = _state.value.conversationId
+        if (conversationId.isBlank()) return
+
         viewModelScope.launch {
-            val conversationId = _state.value.conversationId
             when (val result = clearConversationUseCase(conversationId)) {
                 is Resource.Success -> {
                     _state.update {
@@ -88,13 +96,11 @@ class ChatViewModel @Inject constructor(
                         )
                     }
                 }
-
                 is Resource.Error -> {
                     _state.update {
                         it.copy(userMessage = result.message ?: "Error al limpiar conversación")
                     }
                 }
-
                 else -> Unit
             }
         }

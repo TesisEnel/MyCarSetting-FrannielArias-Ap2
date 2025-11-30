@@ -1,5 +1,3 @@
-@file:OptIn(ExperimentalMaterial3Api::class)
-
 package edu.ucne.loginapi.presentation.chatBot
 
 import androidx.compose.foundation.background
@@ -43,17 +41,25 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import edu.ucne.loginapi.domain.model.ChatMessage
 import edu.ucne.loginapi.domain.model.ChatRole
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChatScreen(
+    conversationId: String,
     viewModel: ChatViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+
+    LaunchedEffect(conversationId) {
+        viewModel.onEvent(ChatEvent.Initialize(conversationId))
+    }
+
     ChatBody(
         state = state,
         onEvent = viewModel::onEvent
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChatBody(
     state: ChatUiState,
@@ -95,6 +101,7 @@ fun ChatBody(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ChatTopBar(onClearConversation: () -> Unit) {
     TopAppBar(
@@ -147,7 +154,6 @@ private fun ChatContent(
                 }
             }
         }
-
         messages.isEmpty() -> {
             Box(
                 modifier = modifier.fillMaxWidth(),
@@ -174,7 +180,6 @@ private fun ChatContent(
                 }
             }
         }
-
         else -> {
             LazyColumn(
                 modifier = modifier

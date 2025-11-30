@@ -3,8 +3,10 @@ package edu.ucne.loginapi.presentation
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.navArgument
 import edu.ucne.loginapi.presentation.Services.ServicesScreen
 import edu.ucne.loginapi.presentation.chatBot.ChatScreen
 import edu.ucne.loginapi.presentation.dashboard.DashboardScreen
@@ -25,7 +27,9 @@ sealed class AppDestination(val route: String) {
     object UserCar : AppDestination("user_car")
     object History : AppDestination("history")
     object Manual : AppDestination("manual")
-    object Chat : AppDestination("chat")
+    object Chat : AppDestination("chat/{conversationId}") {
+        fun createRoute(conversationId: String) = "chat/$conversationId"
+    }
     object Services : AppDestination("services")
     object Profile : AppDestination("profile")
 }
@@ -45,6 +49,9 @@ fun MyCarSettingNavHost(
         }
         composable(AppDestination.Login.route) {
             UsuariosScreen(navController = navController)
+        }
+        composable(AppDestination.Register.route) {
+            RegisterScreen(navController = navController)
         }
         composable(AppDestination.Dashboard.route) {
             DashboardScreen(
@@ -71,8 +78,17 @@ fun MyCarSettingNavHost(
         composable(AppDestination.Manual.route) {
             ManualScreen()
         }
-        composable(AppDestination.Chat.route) {
-            ChatScreen()
+        composable(
+            route = AppDestination.Chat.route,
+            arguments = listOf(
+                navArgument("conversationId") {
+                    type = NavType.StringType
+                }
+            )
+        ) { backStackEntry ->
+            val conversationId =
+                backStackEntry.arguments?.getString("conversationId") ?: "default_conversation"
+            ChatScreen(conversationId = conversationId)
         }
         composable(AppDestination.Profile.route) {
             ProfileScreen(
