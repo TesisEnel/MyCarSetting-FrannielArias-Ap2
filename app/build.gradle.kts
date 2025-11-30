@@ -66,6 +66,7 @@ dependencies {
     implementation(libs.androidx.hilt.work)
     implementation(libs.firebase.components)
     implementation(libs.androidx.datastore.core)
+    implementation(libs.androidx.compose.foundation)
     ksp(libs.androidx.room.compiler)
     implementation(libs.androidx.room.ktx)
 

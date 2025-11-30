@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -28,6 +29,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -167,19 +169,23 @@ fun MaintenanceContent(
     state: MaintenanceUiState,
     onEvent: (MaintenanceEvent) -> Unit
 ) {
+    val overdueTasks = state.overdueTasks
+    val overdueIds = overdueTasks.map { it.id }.toSet()
+    val upcomingTasks = state.upcomingTasks.filter { it.id !in overdueIds }
+
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        if (state.overdueTasks.isNotEmpty()) {
+        if (overdueTasks.isNotEmpty()) {
             item {
                 Text(
                     text = "Vencidas",
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
                 )
             }
-            items(state.overdueTasks, key = { "overdue-${it.id}" }) { task ->
+            items(overdueTasks, key = { it.id }) { task ->
                 MaintenanceTaskItem(
                     task = task,
                     isOverdue = true,
@@ -189,14 +195,14 @@ fun MaintenanceContent(
             }
         }
 
-        if (state.upcomingTasks.isNotEmpty()) {
+        if (upcomingTasks.isNotEmpty()) {
             item {
                 Text(
                     text = "Próximas",
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
                 )
             }
-            items(state.upcomingTasks, key = { "upcoming-${it.id}" }) { task ->
+            items(upcomingTasks, key = { it.id }) { task ->
                 MaintenanceTaskItem(
                     task = task,
                     isOverdue = false,
@@ -206,7 +212,7 @@ fun MaintenanceContent(
             }
         }
 
-        if (state.overdueTasks.isEmpty() && state.upcomingTasks.isEmpty() && !state.isLoading) {
+        if (overdueTasks.isEmpty() && upcomingTasks.isEmpty() && !state.isLoading) {
             item {
                 Box(
                     modifier = Modifier
@@ -301,9 +307,9 @@ private fun TaskDetails(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = task.type.name,
+                text = task.displayType(),
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.primary
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
             if (dateText != null) {
@@ -360,103 +366,101 @@ fun MaintenanceCreateSheet(
     onEvent: (MaintenanceEvent) -> Unit,
     onCreateTask: () -> Unit
 ) {
+    val commonTitles = listOf(
+        "Cambio de aceite",
+        "Revisión de frenos",
+        "Rotación de neumáticos",
+        "Cambio de filtro de aire",
+        "Revisión general"
+    )
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Column(
-            verticalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
-            Text(
-                text = "Nuevo recordatorio",
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold
-            )
+        Text(
+            text = "Nuevo recordatorio",
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold
+        )
 
-            state.currentCar?.let { car ->
-                Text(
-                    text = "${car.brand} ${car.model}",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
+        OutlinedTextField(
+            value = state.newTaskTitle,
+            onValueChange = { onEvent(MaintenanceEvent.OnNewTitleChange(it)) },
+            label = { Text("Título") },
+            placeholder = { Text("Selecciona o escribe un mantenimiento") },
+            modifier = Modifier.fillMaxWidth()
+        )
 
+        if (commonTitles.isNotEmpty()) {
             Text(
-                text = "Configura un recordatorio rápido para que no olvides tu próximo mantenimiento.",
+                text = "Tareas frecuentes",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-        }
-
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = MaterialTheme.shapes.large
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+            LazyRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                OutlinedTextField(
-                    value = state.newTaskTitle,
-                    onValueChange = { onEvent(MaintenanceEvent.OnNewTitleChange(it)) },
-                    label = { Text("Título") },
-                    placeholder = { Text("Ej. Cambio de aceite") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                OutlinedTextField(
-                    value = state.newTaskDescription,
-                    onValueChange = { onEvent(MaintenanceEvent.OnNewDescriptionChange(it)) },
-                    label = { Text("Descripción (opcional)") },
-                    placeholder = { Text("Agrega detalles si lo necesitas") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                OutlinedTextField(
-                    value = state.newTaskDueMileage,
-                    onValueChange = { onEvent(MaintenanceEvent.OnNewDueMileageChange(it)) },
-                    label = { Text("Kilometraje objetivo (opcional)") },
-                    placeholder = { Text("Ej. 150 000") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                Text(
-                    text = "Puedes dejar el kilometraje vacío si es un recordatorio por fecha.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                items(commonTitles) { title ->
+                    OutlinedButton(
+                        onClick = { onEvent(MaintenanceEvent.OnNewTitleChange(title)) }
+                    ) {
+                        Text(text = title)
+                    }
+                }
             }
         }
 
+        OutlinedTextField(
+            value = state.newTaskDescription,
+            onValueChange = { onEvent(MaintenanceEvent.OnNewDescriptionChange(it)) },
+            label = { Text("Descripción (opcional)") },
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        OutlinedTextField(
+            value = state.newTaskDueMileage,
+            onValueChange = { onEvent(MaintenanceEvent.OnNewDueMileageChange(it)) },
+            label = { Text("Kilometraje objetivo (opcional)") },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Button(
                 onClick = { onEvent(MaintenanceEvent.HideCreateSheet) },
-                modifier = Modifier.weight(1f),
-                shape = MaterialTheme.shapes.extraLarge
+                modifier = Modifier.weight(1f)
             ) {
                 Text("Cancelar")
             }
-
             Button(
                 onClick = onCreateTask,
                 enabled = state.newTaskTitle.isNotBlank(),
-                modifier = Modifier.weight(1f),
-                shape = MaterialTheme.shapes.extraLarge
+                modifier = Modifier.weight(1f)
             ) {
                 Text("Guardar")
             }
         }
+    }
+}
+
+private fun MaintenanceTask.displayType(): String {
+    return when (type.name) {
+        "OIL_CHANGE" -> "Cambio de aceite"
+        "TIRE_ROTATION" -> "Rotación de neumáticos"
+        "BRAKE_INSPECTION" -> "Inspección de frenos"
+        "GENERAL_CHECK" -> "Revisión general"
+        else -> type.name
+            .lowercase(Locale.getDefault())
+            .replace('_', ' ')
+            .replaceFirstChar { it.titlecase(Locale.getDefault()) }
     }
 }

@@ -13,11 +13,13 @@ import edu.ucne.loginapi.presentation.maintenanceHistory.MaintenanceHistoryScree
 import edu.ucne.loginapi.presentation.manual.ManualScreen
 import edu.ucne.loginapi.presentation.userCar.UserCarScreen
 import edu.ucne.loginapi.presentation.usuario.ProfileScreen
+import edu.ucne.loginapi.presentation.usuario.RegisterScreen
 import edu.ucne.loginapi.presentation.usuario.UsuariosScreen
 
 sealed class AppDestination(val route: String) {
     object Splash : AppDestination("splash")
     object Login : AppDestination("login")
+    object Register : AppDestination("register")
     object Dashboard : AppDestination("dashboard")
     object Maintenance : AppDestination("maintenance")
     object UserCar : AppDestination("user_car")
@@ -43,6 +45,9 @@ fun MyCarSettingNavHost(
         }
         composable(AppDestination.Login.route) {
             UsuariosScreen(navController = navController)
+        }
+        composable(AppDestination.Register.route) {
+            RegisterScreen(navController = navController)
         }
         composable(AppDestination.Dashboard.route) {
             DashboardScreen(

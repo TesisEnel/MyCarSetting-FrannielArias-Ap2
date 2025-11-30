@@ -9,23 +9,17 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SheetState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -48,11 +42,9 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import edu.ucne.franniel_arias_ap2_p2.R
-import edu.ucne.loginapi.domain.model.Usuarios
 import edu.ucne.loginapi.presentation.AppDestination
 import edu.ucne.loginapi.ui.components.MyCarLoadingIndicator
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UsuariosScreen(
     navController: NavHostController,
@@ -71,11 +63,11 @@ fun UsuariosScreen(
 
     UsuariosScreenBody(
         state = state,
-        onEvent = viewModel::onEvent
+        onEvent = viewModel::onEvent,
+        onNavigateToRegister = { navController.navigate(AppDestination.Register.route) }
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginLogoSection() {
     Column(
@@ -99,14 +91,12 @@ fun LoginLogoSection() {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UsuariosScreenBody(
     state: UsuarioUiState,
-    onEvent: (UsuarioEvent) -> Unit
+    onEvent: (UsuarioEvent) -> Unit,
+    onNavigateToRegister: () -> Unit
 ) {
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-
     Scaffold { padding ->
         Box(
             modifier = Modifier
@@ -121,26 +111,22 @@ fun UsuariosScreenBody(
                 }
 
                 else -> {
-                    LoginContent(state = state, onEvent = onEvent)
+                    LoginContent(
+                        state = state,
+                        onEvent = onEvent,
+                        onNavigateToRegister = onNavigateToRegister
+                    )
                 }
-            }
-
-            if (state.isSheetVisible) {
-                RegisterBottomSheet(
-                    state = state,
-                    sheetState = sheetState,
-                    onEvent = onEvent
-                )
             }
         }
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun LoginContent(
     state: UsuarioUiState,
-    onEvent: (UsuarioEvent) -> Unit
+    onEvent: (UsuarioEvent) -> Unit,
+    onNavigateToRegister: () -> Unit
 ) {
     var passwordVisible by remember { mutableStateOf(false) }
 
@@ -201,14 +187,13 @@ private fun LoginContent(
                         onClick = { onEvent(UsuarioEvent.Login) }
                     )
 
-                    RegisterPrompt(onShowSheet = { onEvent(UsuarioEvent.ShowBottonSheet) })
+                    RegisterPrompt(onNavigateToRegister = onNavigateToRegister)
                 }
             }
         }
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun LoginForm(
     userName: String,
@@ -262,7 +247,6 @@ private fun LoginForm(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun PasswordVisibilityToggle(
     visible: Boolean,
@@ -276,7 +260,6 @@ private fun PasswordVisibilityToggle(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun MessageSection(
     error: String?,
@@ -327,7 +310,9 @@ private fun LoginButton(
 }
 
 @Composable
-private fun RegisterPrompt(onShowSheet: () -> Unit) {
+private fun RegisterPrompt(
+    onNavigateToRegister: () -> Unit
+) {
     Row(
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically,
@@ -338,129 +323,13 @@ private fun RegisterPrompt(onShowSheet: () -> Unit) {
             style = MaterialTheme.typography.bodyMedium
         )
         Spacer(modifier = Modifier.width(4.dp))
-        TextButton(onClick = onShowSheet) {
+        TextButton(onClick = onNavigateToRegister) {
             Text(
                 text = "Créalo aquí",
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.Bold,
                 textDecoration = TextDecoration.Underline
             )
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun RegisterBottomSheet(
-    state: UsuarioUiState,
-    sheetState: SheetState,
-    onEvent: (UsuarioEvent) -> Unit
-) {
-    ModalBottomSheet(
-        onDismissRequest = { onEvent(UsuarioEvent.HideBottonSheet) },
-        sheetState = sheetState
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-                .navigationBarsPadding(),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                text = "Nuevo usuario",
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            RegisterForm(state = state, onEvent = onEvent)
-
-            if (state.error != null) {
-                Text(
-                    text = state.error,
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodySmall,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-
-            RegisterButtons(
-                enabled = state.userName.isNotBlank() && state.password.isNotBlank(),
-                onCancel = { onEvent(UsuarioEvent.HideBottonSheet) },
-                onSave = {
-                    if (state.userName.isNotBlank() && state.password.isNotBlank()) {
-                        val usuario = Usuarios(
-                            usuarioId = null,
-                            userName = state.userName,
-                            password = state.password
-                        )
-                        onEvent(UsuarioEvent.Crear(usuario))
-                    }
-                }
-            )
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun RegisterForm(
-    state: UsuarioUiState,
-    onEvent: (UsuarioEvent) -> Unit
-) {
-    Column(
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        OutlinedTextField(
-            value = state.userName,
-            onValueChange = { onEvent(UsuarioEvent.UserNameChange(it)) },
-            label = { Text("Nombre de usuario") },
-            placeholder = { Text("Ingrese su nombre de usuario") },
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        OutlinedTextField(
-            value = state.password,
-            onValueChange = { onEvent(UsuarioEvent.PasswordChange(it)) },
-            label = { Text("Contraseña") },
-            placeholder = { Text("Ingrese su contraseña") },
-            singleLine = true,
-            visualTransformation = PasswordVisualTransformation(),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-            modifier = Modifier.fillMaxWidth()
-        )
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun RegisterButtons(
-    enabled: Boolean,
-    onCancel: () -> Unit,
-    onSave: () -> Unit
-) {
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        OutlinedButton(
-            onClick = onCancel,
-            modifier = Modifier.weight(1f)
-        ) {
-            Text("Cancelar")
-        }
-        Button(
-            onClick = onSave,
-            modifier = Modifier.weight(1f),
-            enabled = enabled
-        ) {
-            Text("Guardar")
         }
     }
 }
@@ -478,7 +347,8 @@ fun UsuariosScreenPreview() {
     MaterialTheme {
         UsuariosScreenBody(
             state = sampleState,
-            onEvent = {}
+            onEvent = {},
+            onNavigateToRegister = {}
         )
     }
 }
