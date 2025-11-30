@@ -7,13 +7,14 @@ import edu.ucne.loginapi.data.remote.dataSource.MaintenanceRemoteDataSource
 import edu.ucne.loginapi.data.remote.mappers.toDomain
 import edu.ucne.loginapi.data.remote.mappers.toEntity
 import edu.ucne.loginapi.domain.model.MaintenanceHistory
+import edu.ucne.loginapi.domain.model.MaintenanceStatus
 import edu.ucne.loginapi.domain.model.MaintenanceTask
 import edu.ucne.loginapi.domain.repository.MaintenanceHistoryRepository
 import edu.ucne.loginapi.domain.repository.MaintenanceRepository
 import edu.ucne.loginapi.domain.repository.MaintenanceTaskRepository
+import javax.inject.Inject
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import javax.inject.Inject
 
 class MaintenanceRepositoryImpl @Inject constructor(
     private val taskDao: MaintenanceTaskDao,
@@ -25,10 +26,14 @@ class MaintenanceRepositoryImpl @Inject constructor(
         taskDao.observeTasksForCar(carId).map { list -> list.map { it.toDomain() } }
 
     override fun observeUpcomingTasksForCar(carId: String): Flow<List<MaintenanceTask>> =
-        observeTasksForCar(carId)
+        observeTasksForCar(carId).map { tasks ->
+            tasks.filter { it.status == MaintenanceStatus.UPCOMING }
+        }
 
     override fun observeOverdueTasksForCar(carId: String): Flow<List<MaintenanceTask>> =
-        observeTasksForCar(carId)
+        observeTasksForCar(carId).map { tasks ->
+            tasks.filter { it.status == MaintenanceStatus.OVERDUE }
+        }
 
     override suspend fun getTaskById(id: String): MaintenanceTask? =
         taskDao.getTaskById(id)?.toDomain()
@@ -57,6 +62,15 @@ class MaintenanceRepositoryImpl @Inject constructor(
         taskId: String,
         completionDateMillis: Long
     ): Resource<Unit> {
+        val task = getTaskById(taskId)
+            ?: return Resource.Error("La tarea no existe")
+
+        val updated = task.copy(
+            status = MaintenanceStatus.COMPLETED,
+            updatedAtMillis = completionDateMillis
+        )
+
+        taskDao.upsert(updated.toEntity())
         return Resource.Success(Unit)
     }
 
@@ -66,6 +80,7 @@ class MaintenanceRepositoryImpl @Inject constructor(
     }
 
     override suspend fun postPendingTasks(): Resource<Unit> {
+        // Aquí iría la lógica de sync con API si la necesitas
         return Resource.Success(Unit)
     }
 
