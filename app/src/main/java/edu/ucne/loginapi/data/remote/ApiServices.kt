@@ -132,16 +132,14 @@ interface ManualApiService {
 //Api Vehiculo
 interface VehicleCatalogApiService {
 
-    @GET("vehicle/brands")
+    @GET("api/VehicleBrand")
     suspend fun getBrands(): Response<List<VehicleBrandDto>>
-
-    @GET("vehicle/models")
-    suspend fun getModels(
-        @Query("brandId") brandId: String
+    @GET("api/VehicleModel/brand/{brandId}")
+    suspend fun getModelsByBrand(
+        @Path("brandId") brandId: Int
     ): Response<List<VehicleModelDto>>
-
-    @GET("vehicle/years")
-    suspend fun getYearRanges(
-        @Query("modelId") modelId: String
+    @GET("api/VehicleYearRange/model/{modelId}")
+    suspend fun getYearRangesByModel(
+        @Path("modelId") modelId: Int
     ): Response<List<VehicleYearRangeDto>>
 }
