@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import edu.ucne.loginapi.data.remote.Resource
+import edu.ucne.loginapi.domain.model.MaintenanceSeverity
 import edu.ucne.loginapi.domain.model.MaintenanceStatus
 import edu.ucne.loginapi.domain.model.MaintenanceTask
 import edu.ucne.loginapi.domain.model.MaintenanceType
@@ -61,7 +62,8 @@ class MaintenanceViewModel @Inject constructor(
                         newTaskDescription = "",
                         newTaskDueMileage = "",
                         newTaskDueDateMillis = null,
-                        newTaskDueDateText = ""
+                        newTaskDueDateText = "",
+                        newTaskSeverity = MaintenanceSeverity.MEDIUM
                     )
                 }
             }
@@ -94,6 +96,10 @@ class MaintenanceViewModel @Inject constructor(
                         newTaskDueDateText = ""
                     )
                 }
+            }
+
+            is MaintenanceEvent.OnNewSeveritySelected -> {
+                _state.update { it.copy(newTaskSeverity = event.severity) }
             }
 
             is MaintenanceEvent.OnCompleteTask -> completeTask(event.taskId)
@@ -178,17 +184,24 @@ class MaintenanceViewModel @Inject constructor(
             return
         }
 
+        val dueMillis = _state.value.newTaskDueDateMillis
+        if (dueMillis == null) {
+            _state.update { it.copy(userMessage = "Selecciona una fecha y hora objetivo") }
+            return
+        }
+
         val mileageText = _state.value.newTaskDueMileage.trim()
         val mileage = mileageText.toIntOrNull()
         val now = System.currentTimeMillis()
 
         val task = MaintenanceTask(
             carId = current.id,
-            type = edu.ucne.loginapi.domain.model.MaintenanceType.OIL_CHANGE,
+            type = MaintenanceType.OIL_CHANGE,
             title = title,
             description = _state.value.newTaskDescription.ifBlank { null },
-            dueDateMillis = _state.value.newTaskDueDateMillis,
+            dueDateMillis = dueMillis,
             dueMileageKm = mileage,
+            severity = _state.value.newTaskSeverity,
             status = MaintenanceStatus.UPCOMING,
             createdAtMillis = now,
             updatedAtMillis = now
@@ -206,6 +219,7 @@ class MaintenanceViewModel @Inject constructor(
                             newTaskDueMileage = "",
                             newTaskDueDateMillis = null,
                             newTaskDueDateText = "",
+                            newTaskSeverity = MaintenanceSeverity.MEDIUM,
                             userMessage = "Tarea creada localmente"
                         )
                     }

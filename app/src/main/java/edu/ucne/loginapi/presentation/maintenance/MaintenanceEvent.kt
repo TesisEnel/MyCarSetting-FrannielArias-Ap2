@@ -1,5 +1,6 @@
 package edu.ucne.loginapi.presentation.maintenance
 
+import edu.ucne.loginapi.domain.model.MaintenanceSeverity
 import edu.ucne.loginapi.domain.model.MaintenanceTask
 
 sealed interface MaintenanceEvent {
@@ -13,6 +14,8 @@ sealed interface MaintenanceEvent {
     data class OnNewDueMileageChange(val value: String) : MaintenanceEvent
     data class OnNewDueDateSelected(val millis: Long, val formatted: String) : MaintenanceEvent
     object OnClearNewDueDate : MaintenanceEvent
+
+    data class OnNewSeveritySelected(val severity: MaintenanceSeverity) : MaintenanceEvent
 
     data class OnCompleteTask(val taskId: String) : MaintenanceEvent
     data class OnDeleteTask(val taskId: String) : MaintenanceEvent
