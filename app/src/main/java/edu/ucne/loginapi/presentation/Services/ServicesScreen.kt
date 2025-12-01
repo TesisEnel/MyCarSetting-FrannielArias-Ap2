@@ -5,6 +5,14 @@ package edu.ucne.loginapi.presentation.Services
 import ServiceCategory
 import ServiceItem
 import ServicesUiState
+import android.Manifest
+import android.annotation.SuppressLint
+import android.content.Intent
+import android.location.Location
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -26,16 +34,22 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.GoogleMap
+import com.google.maps.android.compose.MapProperties
 import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.MarkerState
 import com.google.maps.android.compose.rememberCameraPositionState
@@ -89,24 +103,94 @@ fun ServicesScreen(
     }
 }
 
+@SuppressLint("MissingPermission")
 @Composable
 private fun ServicesContent(
     state: ServicesUiState,
     onEvent: (ServicesEvent) -> Unit
 ) {
+    val context = LocalContext.current
+    val fusedLocationClient = remember {
+        LocationServices.getFusedLocationProviderClient(context)
+    }
+
+    var hasLocationPermission by remember { mutableStateOf(false) }
+    var myLocation by remember { mutableStateOf<LatLng?>(null) }
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        hasLocationPermission =
+            permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
+                    permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true
+
+        if (hasLocationPermission) {
+            fusedLocationClient.lastLocation.addOnSuccessListener { location ->
+                if (location != null) {
+                    myLocation = LatLng(location.latitude, location.longitude)
+                }
+            }
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        permissionLauncher.launch(
+            arrayOf(
+                Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.ACCESS_COARSE_LOCATION
+            )
+        )
+    }
+
     val services = remember(state.services, state.selectedCategory) {
         state.selectedCategory?.let { category ->
             state.services.filter { it.category == category }
         } ?: state.services
     }
 
-    val defaultCenter = services.firstOrNull()?.let {
-        LatLng(it.latitude, it.longitude)
-    } ?: LatLng(18.4861, -69.9312)
+    // Filtrar por servicios cercanos (radio de 10 km) cuando tenemos ubicación
+    val nearbyServices = remember(services, myLocation) {
+        val currentLocation = myLocation
+        if (currentLocation == null) {
+            emptyList()
+        } else {
+            services
+                .map { service ->
+                    val result = FloatArray(1)
+                    Location.distanceBetween(
+                        currentLocation.latitude,
+                        currentLocation.longitude,
+                        service.latitude,
+                        service.longitude,
+                        result
+                    )
+                    service to result[0] // distancia en metros
+                }
+                .filter { it.second <= 10_000f } // 10 km
+                .sortedBy { it.second }
+                .map { it.first }
+        }
+    }
+
+    val defaultCenter = myLocation
+        ?: nearbyServices.firstOrNull()?.let {
+            LatLng(it.latitude, it.longitude)
+        }
+        ?: LatLng(18.4861, -69.9312)
 
     val cameraPositionState = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(defaultCenter, 13f)
     }
+
+    LaunchedEffect(defaultCenter) {
+        cameraPositionState.animate(
+            CameraUpdateFactory.newLatLngZoom(defaultCenter, 14f)
+        )
+    }
+
+    val mapProperties = MapProperties(
+        isMyLocationEnabled = hasLocationPermission
+    )
 
     Card(
         modifier = Modifier
@@ -120,11 +204,14 @@ private fun ServicesContent(
     ) {
         GoogleMap(
             modifier = Modifier.fillMaxSize(),
-            cameraPositionState = cameraPositionState
+            cameraPositionState = cameraPositionState,
+            properties = mapProperties
         ) {
-            services.forEach { service ->
+            nearbyServices.forEach { service ->
                 Marker(
-                    state = MarkerState(position = LatLng(service.latitude, service.longitude)),
+                    state = MarkerState(
+                        position = LatLng(service.latitude, service.longitude)
+                    ),
                     title = service.name,
                     snippet = service.distanceText
                 )
@@ -155,9 +242,9 @@ private fun ServicesContent(
         fontWeight = FontWeight.SemiBold
     )
 
-    if (services.isEmpty()) {
+    if (nearbyServices.isEmpty()) {
         Text(
-            text = "No hay servicios para la categoría seleccionada.",
+            text = "No hay servicios cercanos a tu ubicación actual.",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -166,8 +253,29 @@ private fun ServicesContent(
             modifier = Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            items(services, key = { it.id }) { service ->
-                ServiceItemCard(service = service)
+            items(nearbyServices, key = { it.id }) { service ->
+                ServiceItemCard(
+                    service = service,
+                    onClick = {
+                        val gmmIntentUri = Uri.parse(
+                            "google.navigation:q=${service.latitude},${service.longitude}&mode=d"
+                        )
+                        val mapIntent = Intent(Intent.ACTION_VIEW, gmmIntentUri).apply {
+                            setPackage("com.google.android.apps.maps")
+                        }
+
+                        if (mapIntent.resolveActivity(context.packageManager) != null) {
+                            context.startActivity(mapIntent)
+                        } else {
+                            val browserUri = Uri.parse(
+                                "https://www.google.com/maps/dir/?api=1&destination=${service.latitude},${service.longitude}"
+                            )
+                            context.startActivity(
+                                Intent(Intent.ACTION_VIEW, browserUri)
+                            )
+                        }
+                    }
+                )
             }
         }
     }
@@ -223,10 +331,13 @@ private fun ServiceCategoryChips(
 
 @Composable
 private fun ServiceItemCard(
-    service: ServiceItem
+    service: ServiceItem,
+    onClick: () -> Unit
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() },
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
         ),
