@@ -50,23 +50,24 @@ interface ChatApi {
 
 //Api Car
 interface CarApiService {
-    @GET("api/cars")
+    @GET("api/UserCar")
     suspend fun getCars(): Response<List<UserCarDto>>
 
-    @POST("api/cars")
+    @GET("api/UserCar/{id}")
+    suspend fun getCar(@Path("id") id: Int): Response<UserCarDto>
+
+    @GET("api/UserCar/current")
+    suspend fun getCurrentCar(): Response<UserCarDto>
+    @POST("api/UserCar")
     suspend fun createCar(@Body request: CreateUserCarRequest): Response<UserCarDto>
-
-    @PATCH("api/cars/{id}")
+    @PUT("api/UserCar/{id}")
     suspend fun updateCar(
-        @Path("id") id: String,
+        @Path("id") id: Int,
         @Body request: UpdateUserCarRequest
-    ): Response<UserCarDto>
+    ): Response<Unit>
 
-    @DELETE("api/cars/{id}")
-    suspend fun deleteCar(@Path("id") id: String): Response<Unit>
-
-    @POST("api/cars/{id}/setCurrent")
-    suspend fun setCurrent(@Path("id") id: String): Response<Unit>
+    @DELETE("api/UserCar/{id}")
+    suspend fun deleteCar(@Path("id") id: Int): Response<Unit>
 }
 
 //Api Maintenance
