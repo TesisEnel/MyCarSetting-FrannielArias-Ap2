@@ -23,7 +23,7 @@ class SplashViewModel @Inject constructor(
             val session = getSessionUseCase()
             _state.value = SplashUiState(
                 isCheckingSession = false,
-                isLoggedIn = session != null
+                isLoggedIn = false
             )
         }
     }

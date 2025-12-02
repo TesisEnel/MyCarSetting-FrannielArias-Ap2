@@ -1,6 +1,8 @@
 package edu.ucne.loginapi.data.syncWorker
 
+import android.Manifest
 import android.content.Context
+import androidx.annotation.RequiresPermission
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.hilt.work.HiltWorker
@@ -20,6 +22,7 @@ class MaintenanceAlertWorker @AssistedInject constructor(
     private val maintenanceTaskDao: MaintenanceTaskDao
 ) : CoroutineWorker(appContext, params) {
 
+    @RequiresPermission(Manifest.permission.POST_NOTIFICATIONS)
     override suspend fun doWork(): Result {
         val tasks = maintenanceTaskDao.getAllTasksOnce()
         val now = System.currentTimeMillis()
