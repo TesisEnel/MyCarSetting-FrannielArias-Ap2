@@ -1,7 +1,5 @@
 package edu.ucne.loginapi.data.remote
 
-import edu.ucne.loginapi.data.remote.dto.ChatRequestDto
-import edu.ucne.loginapi.data.remote.dto.ChatResponseDto
 import edu.ucne.loginapi.data.remote.dto.CreateMaintenanceHistoryRequest
 import edu.ucne.loginapi.data.remote.dto.CreateMaintenanceTaskRequest
 import edu.ucne.loginapi.data.remote.dto.GuideArticleDto
@@ -18,7 +16,6 @@ import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
-import retrofit2.http.PATCH
 import retrofit2.http.POST
 import retrofit2.http.PUT
 import retrofit2.http.Path
@@ -42,13 +39,6 @@ interface UsuariosApiService {
     suspend fun updateUsuarios(
         @Body usuariosDto: UsuariosDto
     )
-}
-
-interface ChatApi {
-    @POST("chat")
-    suspend fun sendMessage(
-        @Body request: ChatRequestDto
-    ): ChatResponseDto
 }
 
 interface CarApiService {
