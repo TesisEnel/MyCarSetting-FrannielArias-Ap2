@@ -1,6 +1,5 @@
 package edu.ucne.loginapi.data.remote.mappers
 
-import edu.ucne.loginapi.data.entity.ChatMessageEntity
 import edu.ucne.loginapi.data.entity.MaintenanceHistoryEntity
 import edu.ucne.loginapi.data.entity.MaintenanceTaskEntity
 import edu.ucne.loginapi.data.entity.UserCarEntity
@@ -18,7 +17,6 @@ import edu.ucne.loginapi.data.remote.dto.VehicleBrandDto
 import edu.ucne.loginapi.data.remote.dto.VehicleModelDto
 import edu.ucne.loginapi.data.remote.dto.VehicleYearRangeDto
 import edu.ucne.loginapi.data.remote.dto.WarningLightDto
-import edu.ucne.loginapi.domain.model.ChatMessage
 import edu.ucne.loginapi.domain.model.ChatRole
 
 import edu.ucne.loginapi.domain.model.FuelType
@@ -341,27 +339,6 @@ fun MaintenanceHistory.toEntity(): MaintenanceHistoryEntity =
         cost = cost,
         notes = notes
     )
-
-fun ChatMessageEntity.toDomain(): ChatMessage =
-    ChatMessage(
-        id = id,
-        conversationId = conversationId,
-        role = ChatRole.valueOf(role),
-        content = content,
-        timestampMillis = timestampMillis,
-        isPendingSync = isPendingSync
-    )
-
-fun ChatMessage.toEntity(): ChatMessageEntity =
-    ChatMessageEntity(
-        id = id,
-        conversationId = conversationId,
-        role = role.name,
-        content = content,
-        timestampMillis = timestampMillis,
-        isPendingSync = isPendingSync
-    )
-
 
 fun VehicleBrandDto.toDomain(): VehicleBrand =
     VehicleBrand(
