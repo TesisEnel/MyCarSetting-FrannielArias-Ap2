@@ -19,8 +19,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -54,7 +52,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -62,6 +59,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import edu.ucne.loginapi.domain.model.MaintenanceSeverity
 import edu.ucne.loginapi.domain.model.MaintenanceTask
 import edu.ucne.loginapi.ui.components.MyCarLoadingIndicator
@@ -283,24 +283,21 @@ private fun MaintenanceSummaryBanner(
             container = MaterialTheme.colorScheme.errorContainer
             content = MaterialTheme.colorScheme.onErrorContainer
             title = "Tienes $overdueCount tareas vencidas"
-            message =
-                "Te recomendamos atender al menos una esta semana para evitar problemas en tu vehículo."
+            message = "Te recomendamos atender al menos una esta semana para evitar problemas en tu vehículo."
         }
 
         upcomingCount > 0 -> {
             container = MaterialTheme.colorScheme.primaryContainer
             content = MaterialTheme.colorScheme.onPrimaryContainer
             title = "Tienes $upcomingCount tareas próximas"
-            message =
-                "Si las completas a tiempo, mantendrás tu vehículo en buen estado y evitarás fallas futuras."
+            message = "Si las completas a tiempo, mantendrás tu vehículo en buen estado y evitarás fallas futuras."
         }
 
         else -> {
             container = MaterialTheme.colorScheme.surfaceVariant
             content = MaterialTheme.colorScheme.onSurfaceVariant
             title = "Todo al día"
-            message =
-                "No tienes tareas pendientes. Mantén tus registros actualizados para seguir así."
+            message = "No tienes tareas pendientes. Mantén tus registros actualizados para seguir así."
         }
     }
 
@@ -401,8 +398,7 @@ fun MaintenanceTaskItem(
                     color = contentColor
                 )
                 val statusLabel = if (isOverdue) "Vencida" else "Próxima"
-                val statusColor =
-                    if (isOverdue) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+                val statusColor = if (isOverdue) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
                 InfoTag(
                     text = statusLabel,
                     background = statusColor.copy(alpha = 0.12f),
@@ -495,10 +491,9 @@ private fun TaskDetails(
         }
 
         if (task.dueMileageKm != null) {
-            val textColor = if (isOverdue) {
-                MaterialTheme.colorScheme.error
-            } else {
-                MaterialTheme.colorScheme.primary
+            val textColor = when {
+                isOverdue -> MaterialTheme.colorScheme.error
+                else -> MaterialTheme.colorScheme.primary
             }
             Spacer(modifier = Modifier.height(4.dp))
             Text(
