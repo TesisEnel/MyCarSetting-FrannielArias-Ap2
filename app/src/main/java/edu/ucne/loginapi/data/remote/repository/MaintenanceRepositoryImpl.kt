@@ -22,10 +22,10 @@ class MaintenanceRepositoryImpl @Inject constructor(
     private val remote: MaintenanceRemoteDataSource
 ) : MaintenanceRepository, MaintenanceTaskRepository, MaintenanceHistoryRepository {
 
-    fun observeTasksForCar(carId: String): Flow<List<MaintenanceTask>> =
+    override fun observeTasksForCar(carId: Int): Flow<List<MaintenanceTask>> =
         taskDao.observeTasksForCar(carId).map { list -> list.map { it.toDomain() } }
 
-    override fun observeUpcomingTasksForCar(carId: String): Flow<List<MaintenanceTask>> =
+    override fun observeUpcomingTasksForCar(carId: Int): Flow<List<MaintenanceTask>> =
         observeTasksForCar(carId).map { tasks ->
             val now = System.currentTimeMillis()
             tasks.filter { task ->
@@ -34,7 +34,7 @@ class MaintenanceRepositoryImpl @Inject constructor(
             }
         }
 
-    override fun observeOverdueTasksForCar(carId: String): Flow<List<MaintenanceTask>> =
+    override fun observeOverdueTasksForCar(carId: Int): Flow<List<MaintenanceTask>> =
         observeTasksForCar(carId).map { tasks ->
             val now = System.currentTimeMillis()
             tasks.filter { task ->
@@ -44,7 +44,7 @@ class MaintenanceRepositoryImpl @Inject constructor(
             }
         }
 
-    override suspend fun getTaskById(id: String): MaintenanceTask? =
+    override suspend fun getTaskById(id: Int): MaintenanceTask? =
         taskDao.getTaskById(id)?.toDomain()
 
     override suspend fun createTaskLocal(task: MaintenanceTask): Resource<MaintenanceTask> {
@@ -57,17 +57,16 @@ class MaintenanceRepositoryImpl @Inject constructor(
         return Resource.Success(task)
     }
 
-    override suspend fun deleteTaskLocal(id: String): Resource<Unit> {
+    override suspend fun deleteTaskLocal(id: Int): Resource<Unit> {
         taskDao.deleteTask(id)
         return Resource.Success(Unit)
     }
 
     override suspend fun markTaskCompleted(
-        taskId: String,
+        taskId: Int,
         completionDateMillis: Long
     ): Resource<Unit> {
-        val task = getTaskById(taskId)
-            ?: return Resource.Error("La tarea no existe")
+        val task = getTaskById(taskId) ?: return Resource.Error("La tarea no existe")
 
         val updated = task.copy(
             status = MaintenanceStatus.COMPLETED,
@@ -76,46 +75,57 @@ class MaintenanceRepositoryImpl @Inject constructor(
         taskDao.upsert(updated.toEntity())
 
         val historyRecord = MaintenanceHistory(
-            id = "",
+            id = 0,
             carId = task.carId,
             taskType = task.type,
             serviceDateMillis = completionDateMillis,
             mileageKm = task.dueMileageKm,
-            workshopName = null,
             cost = null,
-            notes = task.title,
-            remoteId = null
+            workshopName = null,
+            notes = task.title
         )
         historyDao.upsert(historyRecord.toEntity())
 
         return Resource.Success(Unit)
     }
 
-    override fun observeHistoryForCar(carId: String): Flow<List<MaintenanceHistory>> =
+    override fun observeHistoryForCar(carId: Int): Flow<List<MaintenanceHistory>> =
         historyDao.observeHistoryForCar(carId).map { list -> list.map { it.toDomain() } }
 
-    override suspend fun getHistoryById(id: String): MaintenanceHistory? =
+    override suspend fun getHistoryById(id: Int): MaintenanceHistory? =
         historyDao.getHistoryById(id)?.toDomain()
 
     override suspend fun addRecord(record: MaintenanceHistory): Resource<MaintenanceHistory> {
-        historyDao.upsert(record.toEntity())
-        return Resource.Success(record)
+        return try {
+            historyDao.upsert(record.toEntity())
+            Resource.Success(record)
+        } catch (e: Exception) {
+            Resource.Error(e.localizedMessage ?: "Error al guardar historial", record)
+        }
     }
 
-    override suspend fun deleteRecord(id: String): Resource<Unit> {
-        historyDao.delete(id)
-        return Resource.Success(Unit)
+    override suspend fun deleteRecord(id: Int): Resource<Unit> {
+        return try {
+            historyDao.delete(id)
+            Resource.Success(Unit)
+        } catch (e: Exception) {
+            Resource.Error(e.localizedMessage ?: "Error al eliminar historial")
+        }
     }
 
-    override suspend fun syncFromRemote(carId: String): Resource<Unit> {
+    override suspend fun syncFromRemote(carId: Int): Resource<Unit> {
         val tasksRes = remote.getTasksForCar(carId)
-        if (tasksRes is Resource.Error) return tasksRes
+        if (tasksRes is Resource.Error) {
+            return Resource.Error(tasksRes.message ?: "Error al obtener tareas")
+        }
 
         val historyRes = remote.getHistoryForCar(carId)
-        if (historyRes is Resource.Error) return historyRes
+        if (historyRes is Resource.Error) {
+            return Resource.Error(historyRes.message ?: "Error al obtener historial")
+        }
 
-        val tasks = (tasksRes as Resource.Success).data
-        val history = (historyRes as Resource.Success).data
+        val tasks = (tasksRes as Resource.Success).data.orEmpty()
+        val history = (historyRes as Resource.Success).data.orEmpty()
 
         taskDao.clearForCar(carId)
         historyDao.clearForCar(carId)
@@ -134,8 +144,8 @@ class MaintenanceRepositoryImpl @Inject constructor(
             val task = entity.toDomain()
             val res = remote.createTask(task)
             if (res is Resource.Success) {
-                val created = res.data
-                val updated = created.copy(id = entity.id)
+                val created = res.data ?: continue
+                val updated = created.copy(id = entity.id, remoteId = created.remoteId)
                 taskDao.upsert(updated.toEntity())
             }
         }
@@ -149,8 +159,9 @@ class MaintenanceRepositoryImpl @Inject constructor(
 
         val pendingDeletes = taskDao.getPendingDeleteTasks()
         for (entity in pendingDeletes) {
-            entity.remoteId?.let { remoteId ->
-                remote.deleteTask(remoteId.toString())
+            val remoteId = entity.remoteId
+            if (remoteId != null) {
+                remote.deleteTask(remoteId)
             }
             taskDao.deleteTask(entity.id)
         }
