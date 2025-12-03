@@ -89,7 +89,7 @@ class MaintenanceHistoryViewModel @Inject constructor(
         }
     }
 
-    private fun deleteRecord(id: String) {
+    private fun deleteRecord(id: Int) {
         viewModelScope.launch {
             val result = deleteMaintenanceRecordUseCase(id)
             when (result) {
