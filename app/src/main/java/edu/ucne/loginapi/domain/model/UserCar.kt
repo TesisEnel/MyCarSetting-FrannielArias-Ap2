@@ -1,7 +1,7 @@
 package edu.ucne.loginapi.domain.model
 
 data class UserCar(
-    val id: String,
+    val id: Int = 0,
     val brand: String,
     val model: String,
     val year: Int,
@@ -9,7 +9,7 @@ data class UserCar(
     val fuelType: FuelType,
     val usageType: UsageType,
     val isCurrent: Boolean,
-    val remoteId: Long? = null
+    val remoteId: Int? = null
 )
 
 enum class FuelType {

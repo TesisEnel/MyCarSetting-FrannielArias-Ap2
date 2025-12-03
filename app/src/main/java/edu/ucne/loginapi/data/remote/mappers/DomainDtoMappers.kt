@@ -1,13 +1,8 @@
 package edu.ucne.loginapi.data.remote.mappers
 
-import edu.ucne.loginapi.data.entity.ChatMessageEntity
 import edu.ucne.loginapi.data.entity.MaintenanceHistoryEntity
-import edu.ucne.loginapi.domain.model.MaintenanceSeverity
 import edu.ucne.loginapi.data.entity.MaintenanceTaskEntity
 import edu.ucne.loginapi.data.entity.UserCarEntity
-import edu.ucne.loginapi.data.remote.dto.ChatMessageDto
-import edu.ucne.loginapi.data.remote.dto.ChatRequestDto
-import edu.ucne.loginapi.data.remote.dto.ChatResponseDto
 import edu.ucne.loginapi.data.remote.dto.CreateMaintenanceHistoryRequest
 import edu.ucne.loginapi.data.remote.dto.CreateMaintenanceTaskRequest
 import edu.ucne.loginapi.data.remote.dto.CreateUserCarRequest
@@ -22,11 +17,10 @@ import edu.ucne.loginapi.data.remote.dto.VehicleBrandDto
 import edu.ucne.loginapi.data.remote.dto.VehicleModelDto
 import edu.ucne.loginapi.data.remote.dto.VehicleYearRangeDto
 import edu.ucne.loginapi.data.remote.dto.WarningLightDto
-import edu.ucne.loginapi.domain.model.ChatMessage
-import edu.ucne.loginapi.domain.model.ChatRole
 import edu.ucne.loginapi.domain.model.FuelType
 import edu.ucne.loginapi.domain.model.GuideArticle
 import edu.ucne.loginapi.domain.model.MaintenanceHistory
+import edu.ucne.loginapi.domain.model.MaintenanceSeverity
 import edu.ucne.loginapi.domain.model.MaintenanceStatus
 import edu.ucne.loginapi.domain.model.MaintenanceTask
 import edu.ucne.loginapi.domain.model.MaintenanceType
@@ -37,7 +31,6 @@ import edu.ucne.loginapi.domain.model.VehicleBrand
 import edu.ucne.loginapi.domain.model.VehicleModel
 import edu.ucne.loginapi.domain.model.VehicleYearRange
 import edu.ucne.loginapi.domain.model.WarningLight
-import java.util.UUID
 
 fun FuelType.toDto(): String = name
 
@@ -59,10 +52,18 @@ fun MaintenanceStatus.toDto(): String = name
 fun String.toMaintenanceStatus(): MaintenanceStatus =
     runCatching { MaintenanceStatus.valueOf(this) }.getOrElse { MaintenanceStatus.UPCOMING }
 
-fun ChatRole.toDto(): String = name
-
-fun String.toChatRole(): ChatRole =
-    runCatching { ChatRole.valueOf(this) }.getOrElse { ChatRole.ASSISTANT }
+fun UserCar.toDto(): UserCarDto =
+    UserCarDto(
+        id = id,
+        brand = brand,
+        model = model,
+        year = year,
+        plate = plate,
+        fuelType = fuelType.toDto(),
+        usageType = usageType.toDto(),
+        isCurrent = isCurrent,
+        remoteId = remoteId?.toLong()
+    )
 
 fun UserCarDto.toDomain(): UserCar =
     UserCar(
@@ -73,19 +74,8 @@ fun UserCarDto.toDomain(): UserCar =
         plate = plate,
         fuelType = fuelType.toFuelType(),
         usageType = usageType.toUsageType(),
-        isCurrent = isCurrent
-    )
-
-fun UserCar.toDto(): UserCarDto =
-    UserCarDto(
-        id = id,
-        brand = brand,
-        model = model,
-        year = year,
-        plate = plate,
-        fuelType = fuelType.toDto(),
-        usageType = usageType.toDto(),
-        isCurrent = isCurrent
+        isCurrent = isCurrent,
+        remoteId = remoteId?.toInt()
     )
 
 fun UserCar.toCreateRequest(): CreateUserCarRequest =
@@ -111,21 +101,26 @@ fun UserCar.toUpdateRequest(): UpdateUserCarRequest =
 
 fun MaintenanceTaskDto.toDomain(): MaintenanceTask =
     MaintenanceTask(
-        id = id,
+        id = 0,
+        remoteId = id,
         carId = carId,
         type = type.toMaintenanceType(),
         title = title,
         description = description,
         dueDateMillis = dueDateMillis,
         dueMileageKm = dueMileageKm,
+        severity = MaintenanceSeverity.MEDIUM,
         status = status.toMaintenanceStatus(),
         createdAtMillis = createdAtMillis,
-        updatedAtMillis = updatedAtMillis
+        updatedAtMillis = updatedAtMillis,
+        isPendingCreate = false,
+        isPendingUpdate = false,
+        isPendingDelete = false
     )
 
 fun MaintenanceTask.toDto(): MaintenanceTaskDto =
     MaintenanceTaskDto(
-        id = id,
+        id = remoteId ?: id,
         carId = carId,
         type = type.toDto(),
         title = title,
@@ -164,8 +159,8 @@ fun MaintenanceHistoryDto.toDomain(): MaintenanceHistory =
         taskType = taskType.toMaintenanceType(),
         serviceDateMillis = serviceDateMillis,
         mileageKm = mileageKm,
-        workshopName = workshopName,
         cost = cost,
+        workshopName = workshopName,
         notes = notes
     )
 
@@ -176,8 +171,8 @@ fun MaintenanceHistory.toDto(): MaintenanceHistoryDto =
         taskType = taskType.toDto(),
         serviceDateMillis = serviceDateMillis,
         mileageKm = mileageKm,
-        workshopName = workshopName,
         cost = cost,
+        workshopName = workshopName,
         notes = notes
     )
 
@@ -187,8 +182,8 @@ fun MaintenanceHistory.toCreateRequest(): CreateMaintenanceHistoryRequest =
         taskType = taskType.toDto(),
         serviceDateMillis = serviceDateMillis,
         mileageKm = mileageKm,
-        workshopName = workshopName,
         cost = cost,
+        workshopName = workshopName,
         notes = notes
     )
 
@@ -230,22 +225,31 @@ fun GuideArticle.toDto(): GuideArticleDto =
         category = category
     )
 
-fun List<ChatMessage>.toChatRequestDto(): ChatRequestDto {
-    val conversationId = lastOrNull()?.conversationId ?: ""
-    return ChatRequestDto(
-        conversationId = conversationId,
-        messages = map { it.toDto() }
+fun UserCarEntity.toDomain(): UserCar =
+    UserCar(
+        id = id,
+        brand = brand,
+        model = model,
+        year = year,
+        plate = plate,
+        fuelType = fuelType.toFuelType(),
+        usageType = usageType.toUsageType(),
+        isCurrent = isCurrent,
+        remoteId = remoteId
     )
-}
 
-fun ChatResponseDto.toResponseDomain(conversationId: String): ChatMessage =
-    ChatMessage(
-        id = UUID.randomUUID().toString(),
-        conversationId = conversationId,
-        role = ChatRole.ASSISTANT,
-        content = reply,
-        timestampMillis = System.currentTimeMillis(),
-        isPendingSync = false
+fun UserCar.toEntity(): UserCarEntity =
+    UserCarEntity(
+        id = id,
+        brand = brand,
+        model = model,
+        year = year,
+        plate = plate,
+        fuelType = fuelType.toDto(),
+        usageType = usageType.toDto(),
+        isCurrent = isCurrent,
+        remoteId = remoteId,
+        pendingSync = false
     )
 
 fun UsuariosDto.toDomain(): Usuarios =
@@ -262,35 +266,10 @@ fun Usuarios.toDto(): UsuariosDto =
         password = password
     )
 
-fun UserCarEntity.toDomain(): UserCar {
-    return UserCar(
-        id = id,
-        brand = brand,
-        model = model,
-        year = year,
-        plate = plate,
-        fuelType = FuelType.valueOf(fuelType),
-        usageType = UsageType.valueOf(usageType),
-        isCurrent = isCurrent,
-        remoteId = remoteId
-    )
-}
-
-fun UserCar.toEntity(): UserCarEntity {
-    return UserCarEntity(
-        id = id,
-        brand = brand,
-        model = model,
-        year = year,
-        plate = plate,
-        fuelType = fuelType.name,
-        usageType = usageType.name,
-        isCurrent = isCurrent,
-        remoteId = remoteId
-    )
-}
-
 fun MaintenanceTaskEntity.toDomain(): MaintenanceTask {
+    val resolvedSeverity = runCatching { MaintenanceSeverity.valueOf(severity) }
+        .getOrElse { MaintenanceSeverity.MEDIUM }
+
     return MaintenanceTask(
         id = id,
         remoteId = remoteId,
@@ -300,8 +279,7 @@ fun MaintenanceTaskEntity.toDomain(): MaintenanceTask {
         description = description,
         dueDateMillis = dueDateMillis,
         dueMileageKm = dueMileageKm,
-        severity = runCatching { MaintenanceSeverity.valueOf(severity) }
-            .getOrElse { MaintenanceSeverity.MEDIUM },
+        severity = resolvedSeverity,
         status = MaintenanceStatus.valueOf(status),
         createdAtMillis = createdAtMillis,
         updatedAtMillis = updatedAtMillis,
@@ -311,8 +289,8 @@ fun MaintenanceTaskEntity.toDomain(): MaintenanceTask {
     )
 }
 
-fun MaintenanceTask.toEntity(): MaintenanceTaskEntity {
-    return MaintenanceTaskEntity(
+fun MaintenanceTask.toEntity(): MaintenanceTaskEntity =
+    MaintenanceTaskEntity(
         id = id,
         remoteId = remoteId,
         carId = carId,
@@ -329,23 +307,21 @@ fun MaintenanceTask.toEntity(): MaintenanceTaskEntity {
         isPendingUpdate = isPendingUpdate,
         isPendingDelete = isPendingDelete
     )
-}
 
-fun MaintenanceHistoryEntity.toDomain(): MaintenanceHistory {
-    return MaintenanceHistory(
+fun MaintenanceHistoryEntity.toDomain(): MaintenanceHistory =
+    MaintenanceHistory(
         id = id,
         carId = carId,
         taskType = MaintenanceType.valueOf(taskType),
         serviceDateMillis = serviceDateMillis,
         mileageKm = mileageKm,
-        workshopName = workshopName,
         cost = cost,
+        workshopName = workshopName,
         notes = notes
     )
-}
 
-fun MaintenanceHistory.toEntity(): MaintenanceHistoryEntity {
-    return MaintenanceHistoryEntity(
+fun MaintenanceHistory.toEntity(): MaintenanceHistoryEntity =
+    MaintenanceHistoryEntity(
         id = id,
         carId = carId,
         taskType = taskType.name,
@@ -355,35 +331,7 @@ fun MaintenanceHistory.toEntity(): MaintenanceHistoryEntity {
         cost = cost,
         notes = notes
     )
-}
 
-fun ChatMessageEntity.toDomain(): ChatMessage {
-    return ChatMessage(
-        id = id.toString(),
-        conversationId = conversationId,
-        role = role.toChatRole(),
-        content = content,
-        timestampMillis = timestamp,
-        isPendingSync = false
-    )
-}
-
-fun ChatMessage.toEntity(): ChatMessageEntity {
-    return ChatMessageEntity(
-        id = 0L,
-        conversationId = conversationId,
-        role = role.name,
-        content = content,
-        timestamp = timestampMillis
-    )
-}
-
-fun ChatMessage.toDto(): ChatMessageDto {
-    return ChatMessageDto(
-        role = role.name.lowercase(),
-        content = content
-    )
-}
 fun VehicleBrandDto.toDomain(): VehicleBrand =
     VehicleBrand(
         id = id,
@@ -404,4 +352,3 @@ fun VehicleYearRangeDto.toDomain(): VehicleYearRange =
         fromYear = fromYear,
         toYear = toYear
     )
-

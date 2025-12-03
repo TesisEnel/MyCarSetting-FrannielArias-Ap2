@@ -10,14 +10,20 @@ import kotlinx.coroutines.flow.Flow
 interface MaintenanceHistoryDao {
 
     @Query("SELECT * FROM maintenance_history WHERE carId = :carId ORDER BY serviceDateMillis DESC")
-    fun observeHistoryForCar(carId: String): Flow<List<MaintenanceHistoryEntity>>
+    fun observeHistoryForCar(carId: Int): Flow<List<MaintenanceHistoryEntity>>
 
     @Query("SELECT * FROM maintenance_history WHERE id = :id LIMIT 1")
-    suspend fun getHistoryById(id: String): MaintenanceHistoryEntity?
+    suspend fun getHistoryById(id: Int): MaintenanceHistoryEntity?
 
     @Upsert
     suspend fun upsert(history: MaintenanceHistoryEntity)
 
+    @Upsert
+    suspend fun upsertAll(history: List<MaintenanceHistoryEntity>)
+
     @Query("DELETE FROM maintenance_history WHERE id = :id")
-    suspend fun delete(id: String)
+    suspend fun delete(id: Int)
+
+    @Query("DELETE FROM maintenance_history WHERE carId = :carId")
+    suspend fun clearForCar(carId: Int)
 }

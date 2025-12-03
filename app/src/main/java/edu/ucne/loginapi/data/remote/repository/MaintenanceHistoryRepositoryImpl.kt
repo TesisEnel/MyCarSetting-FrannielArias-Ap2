@@ -14,13 +14,13 @@ class MaintenanceHistoryRepositoryImpl @Inject constructor(
     private val maintenanceHistoryDao: MaintenanceHistoryDao
 ) : MaintenanceHistoryRepository {
 
-    override fun observeHistoryForCar(carId: String): Flow<List<MaintenanceHistory>> {
+    override fun observeHistoryForCar(carId: Int): Flow<List<MaintenanceHistory>> {
         return maintenanceHistoryDao.observeHistoryForCar(carId).map { list ->
             list.map { it.toDomain() }
         }
     }
 
-    override suspend fun getHistoryById(id: String): MaintenanceHistory? {
+    override suspend fun getHistoryById(id: Int): MaintenanceHistory? {
         return maintenanceHistoryDao.getHistoryById(id)?.toDomain()
     }
 
@@ -33,7 +33,7 @@ class MaintenanceHistoryRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun deleteRecord(id: String): Resource<Unit> {
+    override suspend fun deleteRecord(id: Int): Resource<Unit> {
         return try {
             maintenanceHistoryDao.delete(id)
             Resource.Success(Unit)

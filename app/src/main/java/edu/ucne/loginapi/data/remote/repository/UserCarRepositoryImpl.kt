@@ -7,55 +7,58 @@ import edu.ucne.loginapi.data.remote.mappers.toEntity
 import edu.ucne.loginapi.domain.model.UserCar
 import edu.ucne.loginapi.domain.repository.UserCarRepository
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
 class UserCarRepositoryImpl @Inject constructor(
-    private val userCarDao: UserCarDao
+    private val dao: UserCarDao
 ) : UserCarRepository {
 
     override fun observeCurrentCar(): Flow<UserCar?> =
-        userCarDao.getCars().map { list ->
+        dao.getCars().map { list ->
             list.firstOrNull { it.isCurrent }?.toDomain()
         }
 
     override fun observeCars(): Flow<List<UserCar>> =
-        userCarDao.getCars().map { list -> list.map { it.toDomain() } }
+        dao.getCars().map { list ->
+            list.map { it.toDomain() }
+        }
 
-    override suspend fun getCurrentCar(): UserCar? {
-        val cars = userCarDao.getCars().first()
-        return cars.firstOrNull { it.isCurrent }?.toDomain()
-    }
+    override suspend fun getCurrentCar(): UserCar? =
+        dao.getCurrentCar()?.toDomain()
 
-    override suspend fun getCarById(id: String): UserCar? =
-        userCarDao.getCar(id)?.toDomain()
+    override suspend fun getCarById(id: Int): UserCar? =
+        dao.getCar(id)?.toDomain()
 
     override suspend fun upsertCar(car: UserCar): Resource<UserCar> {
         return try {
-            userCarDao.upsert(car.toEntity())
+            dao.upsert(
+                car.toEntity().copy(
+                    pendingSync = true
+                )
+            )
             Resource.Success(car)
         } catch (e: Exception) {
-            Resource.Error(e.localizedMessage ?: "Error al guardar vehículo", car)
+            Resource.Error(e.localizedMessage ?: "Error al guardar", car)
         }
     }
 
-    override suspend fun setCurrentCar(id: String): Resource<Unit> {
+    override suspend fun setCurrentCar(id: Int): Resource<Unit> {
         return try {
-            userCarDao.clearCurrent()
-            userCarDao.setCurrent(id)
+            dao.clearCurrent()
+            dao.setCurrent(id)
             Resource.Success(Unit)
         } catch (e: Exception) {
             Resource.Error(e.localizedMessage ?: "Error al cambiar vehículo actual")
         }
     }
 
-    override suspend fun deleteCar(id: String): Resource<Unit> {
+    override suspend fun deleteCar(id: Int): Resource<Unit> {
         return try {
-            userCarDao.delete(id)
+            dao.delete(id)
             Resource.Success(Unit)
         } catch (e: Exception) {
-            Resource.Error(e.localizedMessage ?: "Error al eliminar vehículo")
+            Resource.Error(e.localizedMessage ?: "Error al eliminar")
         }
     }
 }

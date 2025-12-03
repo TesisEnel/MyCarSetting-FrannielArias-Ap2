@@ -10,16 +10,22 @@ import kotlinx.coroutines.flow.Flow
 interface MaintenanceTaskDao {
 
     @Query("SELECT * FROM maintenance_tasks WHERE carId = :carId")
-    fun observeTasksForCar(carId: String): Flow<List<MaintenanceTaskEntity>>
+    fun observeTasksForCar(carId: Int): Flow<List<MaintenanceTaskEntity>>
 
     @Query("SELECT * FROM maintenance_tasks WHERE id = :id LIMIT 1")
-    suspend fun getTaskById(id: String): MaintenanceTaskEntity?
+    suspend fun getTaskById(id: Int): MaintenanceTaskEntity?
 
     @Upsert
     suspend fun upsert(task: MaintenanceTaskEntity)
 
+    @Upsert
+    suspend fun upsertAll(tasks: List<MaintenanceTaskEntity>)
+
     @Query("DELETE FROM maintenance_tasks WHERE id = :id")
-    suspend fun deleteTask(id: String)
+    suspend fun deleteTask(id: Int)
+
+    @Query("DELETE FROM maintenance_tasks WHERE carId = :carId")
+    suspend fun clearForCar(carId: Int)
 
     @Query("SELECT * FROM maintenance_tasks WHERE isPendingCreate = 1")
     suspend fun getPendingCreateTasks(): List<MaintenanceTaskEntity>

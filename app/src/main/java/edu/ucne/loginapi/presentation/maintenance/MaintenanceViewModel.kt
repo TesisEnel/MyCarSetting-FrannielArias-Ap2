@@ -49,11 +49,9 @@ class MaintenanceViewModel @Inject constructor(
         when (event) {
             is MaintenanceEvent.LoadInitialData -> loadInitialData()
             is MaintenanceEvent.Refresh -> refresh()
-
             is MaintenanceEvent.ShowCreateSheet -> {
                 _state.update { it.copy(showCreateSheet = true) }
             }
-
             is MaintenanceEvent.HideCreateSheet -> {
                 _state.update {
                     it.copy(
@@ -67,19 +65,15 @@ class MaintenanceViewModel @Inject constructor(
                     )
                 }
             }
-
             is MaintenanceEvent.OnNewTitleChange -> {
                 _state.update { it.copy(newTaskTitle = event.value) }
             }
-
             is MaintenanceEvent.OnNewDescriptionChange -> {
                 _state.update { it.copy(newTaskDescription = event.value) }
             }
-
             is MaintenanceEvent.OnNewDueMileageChange -> {
                 _state.update { it.copy(newTaskDueMileage = event.value) }
             }
-
             is MaintenanceEvent.OnNewDueDateSelected -> {
                 _state.update {
                     it.copy(
@@ -88,7 +82,6 @@ class MaintenanceViewModel @Inject constructor(
                     )
                 }
             }
-
             is MaintenanceEvent.OnClearNewDueDate -> {
                 _state.update {
                     it.copy(
@@ -97,18 +90,30 @@ class MaintenanceViewModel @Inject constructor(
                     )
                 }
             }
-
             is MaintenanceEvent.OnNewSeveritySelected -> {
                 _state.update { it.copy(newTaskSeverity = event.severity) }
             }
-
             is MaintenanceEvent.OnCompleteTask -> completeTask(event.taskId)
             is MaintenanceEvent.OnDeleteTask -> deleteTask(event.taskId)
             is MaintenanceEvent.OnTaskClicked -> Unit
-
             is MaintenanceEvent.OnUserMessageShown -> {
                 _state.update { it.copy(userMessage = null) }
             }
+            is MaintenanceEvent.OnNewTitleChange -> {
+                val value = event.value
+
+                val isValid = value.length >= 5 && value.matches(Regex("^[A-Za-z0-9ÁÉÍÓÚáéíóúñÑ ]+$"))
+
+                _state.update {
+                    it.copy(
+                        newTaskTitle = value,
+                        newTitleError = if (!isValid && value.isNotEmpty()) {
+                            "El título debe tener mínimo 5 caracteres y solo letras, números y espacios"
+                        } else null
+                    )
+                }
+            }
+
         }
     }
 
@@ -133,6 +138,8 @@ class MaintenanceViewModel @Inject constructor(
             _state.update { it.copy(currentCar = car) }
             observeTasksForCar(car.id)
             _state.update { it.copy(isLoading = false) }
+
+            triggerMaintenanceSyncUseCase()
         }
     }
 
@@ -145,6 +152,7 @@ class MaintenanceViewModel @Inject constructor(
 
             if (car != null) {
                 observeTasksForCar(car.id)
+                triggerMaintenanceSyncUseCase()
             } else {
                 _state.update {
                     it.copy(
@@ -158,7 +166,7 @@ class MaintenanceViewModel @Inject constructor(
         }
     }
 
-    private fun observeTasksForCar(carId: String) {
+    private fun observeTasksForCar(carId: Int) {
         tasksJob?.cancel()
         overdueJob?.cancel()
 
@@ -178,6 +186,12 @@ class MaintenanceViewModel @Inject constructor(
     fun createTask() {
         val current = _state.value.currentCar ?: return
         val title = _state.value.newTaskTitle.trim()
+        if (_state.value.newTitleError != null) {
+
+            _state.update { it.copy(userMessage = "Corrige el título antes de guardar") }
+            return
+        }
+
 
         if (title.isBlank()) {
             _state.update { it.copy(userMessage = "El título es requerido") }
@@ -208,8 +222,7 @@ class MaintenanceViewModel @Inject constructor(
         )
 
         viewModelScope.launch {
-            val result = createMaintenanceTaskLocalUseCase(task)
-            when (result) {
+            when (val result = createMaintenanceTaskLocalUseCase(task)) {
                 is Resource.Success -> {
                     _state.update {
                         it.copy(
@@ -225,7 +238,6 @@ class MaintenanceViewModel @Inject constructor(
                     }
                     triggerMaintenanceSyncUseCase()
                 }
-
                 is Resource.Error -> {
                     _state.update {
                         it.copy(
@@ -233,21 +245,18 @@ class MaintenanceViewModel @Inject constructor(
                         )
                     }
                 }
-
                 is Resource.Loading -> Unit
             }
         }
     }
 
-    private fun completeTask(taskId: String) {
+    private fun completeTask(taskId: Int) {
         viewModelScope.launch {
-            val result = markTaskCompletedUseCase(taskId, System.currentTimeMillis())
-            when (result) {
+            when (val result = markTaskCompletedUseCase(taskId, System.currentTimeMillis())) {
                 is Resource.Success -> {
                     _state.update { it.copy(userMessage = "Tarea completada") }
                     triggerMaintenanceSyncUseCase()
                 }
-
                 is Resource.Error -> {
                     _state.update {
                         it.copy(
@@ -255,21 +264,18 @@ class MaintenanceViewModel @Inject constructor(
                         )
                     }
                 }
-
                 is Resource.Loading -> Unit
             }
         }
     }
 
-    private fun deleteTask(taskId: String) {
+    private fun deleteTask(taskId: Int) {
         viewModelScope.launch {
-            val result = deleteMaintenanceTaskUseCase(taskId)
-            when (result) {
+            when (val result = deleteMaintenanceTaskUseCase(taskId)) {
                 is Resource.Success -> {
                     _state.update { it.copy(userMessage = "Tarea eliminada") }
                     triggerMaintenanceSyncUseCase()
                 }
-
                 is Resource.Error -> {
                     _state.update {
                         it.copy(
@@ -277,7 +283,6 @@ class MaintenanceViewModel @Inject constructor(
                         )
                     }
                 }
-
                 is Resource.Loading -> Unit
             }
         }

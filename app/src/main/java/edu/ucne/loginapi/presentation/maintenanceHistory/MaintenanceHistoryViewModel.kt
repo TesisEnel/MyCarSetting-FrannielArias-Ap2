@@ -1,9 +1,11 @@
+// MaintenanceHistoryViewModel.kt
 package edu.ucne.loginapi.presentation.maintenanceHistory
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import edu.ucne.loginapi.data.remote.Resource
+import edu.ucne.loginapi.data.syncWorker.TriggerFullSyncUseCase
 import edu.ucne.loginapi.domain.useCase.MaintenanceHistory.GetMaintenanceHistoryForCarUseCase
 import edu.ucne.loginapi.domain.useCase.currentCar.GetCurrentCarUseCase
 import edu.ucne.loginapi.domain.useCase.maintenance.DeleteMaintenanceRecordUseCase
@@ -20,7 +22,8 @@ import kotlinx.coroutines.launch
 class MaintenanceHistoryViewModel @Inject constructor(
     private val getCurrentCarUseCase: GetCurrentCarUseCase,
     private val getMaintenanceHistoryForCarUseCase: GetMaintenanceHistoryForCarUseCase,
-    private val deleteMaintenanceRecordUseCase: DeleteMaintenanceRecordUseCase
+    private val deleteMaintenanceRecordUseCase: DeleteMaintenanceRecordUseCase,
+    private val triggerFullSyncUseCase: TriggerFullSyncUseCase
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(MaintenanceHistoryUiState())
@@ -50,6 +53,8 @@ class MaintenanceHistoryViewModel @Inject constructor(
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true) }
 
+            triggerFullSyncUseCase()
+
             val car = getCurrentCarUseCase()
             _state.update { it.copy(currentCar = car) }
 
@@ -67,6 +72,8 @@ class MaintenanceHistoryViewModel @Inject constructor(
         viewModelScope.launch {
             _state.update { it.copy(isRefreshing = true) }
 
+            triggerFullSyncUseCase()
+
             val car = getCurrentCarUseCase()
             _state.update { it.copy(currentCar = car) }
 
@@ -80,7 +87,7 @@ class MaintenanceHistoryViewModel @Inject constructor(
         }
     }
 
-    private fun observeHistory(carId: String) {
+    private fun observeHistory(carId: Int) {
         historyJob?.cancel()
         historyJob = viewModelScope.launch {
             getMaintenanceHistoryForCarUseCase(carId).collectLatest { list ->
@@ -89,12 +96,13 @@ class MaintenanceHistoryViewModel @Inject constructor(
         }
     }
 
-    private fun deleteRecord(id: String) {
+    private fun deleteRecord(id: Int) {
         viewModelScope.launch {
             val result = deleteMaintenanceRecordUseCase(id)
             when (result) {
                 is Resource.Success -> {
                     _state.update { it.copy(userMessage = "Registro eliminado") }
+                    triggerFullSyncUseCase()
                 }
                 is Resource.Error -> {
                     _state.update {

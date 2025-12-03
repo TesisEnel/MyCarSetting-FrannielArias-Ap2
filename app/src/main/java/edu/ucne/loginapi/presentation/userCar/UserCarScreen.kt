@@ -18,10 +18,12 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.StarBorder
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -30,6 +32,7 @@ import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
@@ -37,8 +40,9 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -48,6 +52,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -63,6 +70,7 @@ fun UserCarScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(rememberTopAppBarState())
 
     LaunchedEffect(state.userMessage) {
         val message = state.userMessage
@@ -73,9 +81,20 @@ fun UserCarScreen(
     }
 
     Scaffold(
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
-            TopAppBar(
-                title = { Text("Mis vehículos") }
+            LargeTopAppBar(
+                title = {
+                    Text(
+                        "Mis vehículos",
+                        fontWeight = FontWeight.Bold
+                    )
+                },
+                scrollBehavior = scrollBehavior,
+                colors = TopAppBarDefaults.largeTopAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    scrolledContainerColor = MaterialTheme.colorScheme.surfaceContainer
+                )
             )
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -83,7 +102,10 @@ fun UserCarScreen(
             FloatingActionButton(
                 onClick = { viewModel.onEvent(UserCarEvent.ShowCreateSheet) }
             ) {
-                Icon(imageVector = Icons.Default.Add, contentDescription = "Agregar vehículo")
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = "Agregar vehículo"
+                )
             }
         }
     ) { padding ->
@@ -98,7 +120,17 @@ fun UserCarScreen(
                         modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text("Cargando vehículos...")
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            CircularProgressIndicator()
+                            Text(
+                                text = "Cargando vehículos...",
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
                 }
 
@@ -107,7 +139,27 @@ fun UserCarScreen(
                         modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text("No hay vehículos registrados")
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.DirectionsCar,
+                                contentDescription = null,
+                                modifier = Modifier.size(64.dp),
+                                tint = MaterialTheme.colorScheme.outline
+                            )
+                            Text(
+                                text = "No hay vehículos registrados",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                text = "Presiona + para agregar tu primer vehículo",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
                 }
 
@@ -145,13 +197,13 @@ fun UserCarScreen(
 @Composable
 private fun UserCarList(
     cars: List<UserCar>,
-    currentCarId: String?,
-    onSetCurrent: (String) -> Unit,
-    onDelete: (String) -> Unit
+    currentCarId: Int?,
+    onSetCurrent: (Int) -> Unit,
+    onDelete: (Int) -> Unit
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp),
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         items(cars, key = { it.id }) { car ->
@@ -173,7 +225,17 @@ private fun UserCarItem(
     onDelete: () -> Unit
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = if (isCurrent) {
+                MaterialTheme.colorScheme.primaryContainer
+            } else {
+                MaterialTheme.colorScheme.surfaceContainerHigh
+            }
+        ),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = if (isCurrent) 4.dp else 1.dp
+        )
     ) {
         Row(
             modifier = Modifier
@@ -181,34 +243,73 @@ private fun UserCarItem(
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            Icon(
+                imageVector = Icons.Default.DirectionsCar,
+                contentDescription = null,
+                modifier = Modifier.size(40.dp),
+                tint = if (isCurrent) {
+                    MaterialTheme.colorScheme.onPrimaryContainer
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                }
+            )
+
+            Spacer(modifier = Modifier.size(16.dp))
+
             Column(
                 modifier = Modifier.weight(1f)
             ) {
                 Text(
                     text = "${car.brand} ${car.model}",
-                    style = MaterialTheme.typography.titleMedium
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = if (isCurrent) {
+                        MaterialTheme.colorScheme.onPrimaryContainer
+                    } else {
+                        MaterialTheme.colorScheme.onSurface
+                    }
                 )
+                Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = car.year.toString(),
-                    style = MaterialTheme.typography.bodyMedium
+                    text = "Año ${car.year}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = if (isCurrent) {
+                        MaterialTheme.colorScheme.onPrimaryContainer
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    }
                 )
                 car.plate?.let {
+                    Spacer(modifier = Modifier.height(2.dp))
                     Text(
                         text = "Placa: $it",
-                        style = MaterialTheme.typography.bodySmall
+                        style = MaterialTheme.typography.bodySmall,
+                        color = if (isCurrent) {
+                            MaterialTheme.colorScheme.onPrimaryContainer
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        }
                     )
                 }
             }
+
             IconButton(onClick = onSetCurrent) {
                 Icon(
                     imageVector = if (isCurrent) Icons.Filled.Star else Icons.Outlined.StarBorder,
-                    contentDescription = "Seleccionar vehículo actual"
+                    contentDescription = "Seleccionar vehículo actual",
+                    tint = if (isCurrent) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    }
                 )
             }
+
             IconButton(onClick = onDelete) {
                 Icon(
                     imageVector = Icons.Default.Delete,
-                    contentDescription = "Eliminar vehículo"
+                    contentDescription = "Eliminar vehículo",
+                    tint = MaterialTheme.colorScheme.error
                 )
             }
         }
@@ -223,15 +324,16 @@ private fun NewCarSheet(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+            .padding(horizontal = 24.dp, vertical = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         Text(
             text = "Nuevo vehículo",
-            style = MaterialTheme.typography.titleLarge
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface
         )
 
-        // ✅ Selector de Marca con datos reales de la API
         VehicleBrandDropdown(
             brands = state.brands,
             selectedBrandId = state.selectedBrandId,
@@ -241,7 +343,6 @@ private fun NewCarSheet(
             }
         )
 
-        // ✅ Selector de Modelo (habilitado solo si hay una marca seleccionada)
         VehicleModelDropdown(
             models = state.models,
             selectedModelId = state.selectedModelId,
@@ -251,7 +352,6 @@ private fun NewCarSheet(
             }
         )
 
-        // ✅ Selector de Año (habilitado solo si hay un modelo seleccionado)
         VehicleYearRangeDropdown(
             yearRanges = state.yearRanges,
             selectedYearRangeId = state.selectedYearRangeId,
@@ -263,39 +363,71 @@ private fun NewCarSheet(
 
         OutlinedTextField(
             value = state.plate,
-            onValueChange = { onEvent(UserCarEvent.OnPlateChange(it)) },
-            label = { Text("Placa (opcional)") },
-            modifier = Modifier.fillMaxWidth()
+            onValueChange = { newValue ->
+                if (newValue.length <= 7 && newValue.all { it.isLetterOrDigit() }) {
+                    onEvent(UserCarEvent.OnPlateChange(newValue.uppercase()))
+                }
+            },
+            label = { Text("Placa *") },
+            placeholder = { Text("Ej: A123456") },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            isError = state.plate.isNotEmpty() && state.plate.length != 7,
+            supportingText = {
+                when {
+                    state.plate.isEmpty() -> {
+                        Text(
+                            text = "Campo obligatorio - 7 caracteres",
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                    state.plate.length < 7 -> {
+                        Text(
+                            text = "${state.plate.length}/7 caracteres",
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                    state.plate.length == 7 -> {
+                        Text(
+                            text = "✓ Placa válida",
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+            }
         )
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        Button(
+            onClick = { onEvent(UserCarEvent.OnSaveCar) },
+            enabled = state.selectedBrandId != null &&
+                    state.selectedModelId != null &&
+                    state.selectedYearRangeId != null &&
+                    state.plate.length == 7 && // Validación de placa
+                    !state.isLoadingCatalog,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp)
         ) {
-            Spacer(modifier = Modifier.weight(1f))
-            Button(
-                onClick = { onEvent(UserCarEvent.OnSaveCar) },
-                enabled = state.selectedBrandId != null &&
-                        state.selectedModelId != null &&
-                        state.selectedYearRangeId != null &&
-                        !state.isLoadingCatalog,
-                modifier = Modifier.weight(1f)
-            ) {
-                if (state.isLoadingCatalog) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(20.dp),
-                        strokeWidth = 2.dp,
-                        color = MaterialTheme.colorScheme.onPrimary
-                    )
-                } else {
-                    Text("Guardar")
-                }
+            if (state.isLoadingCatalog) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(24.dp),
+                    strokeWidth = 2.dp,
+                    color = MaterialTheme.colorScheme.onPrimary
+                )
+            } else {
+                Text(
+                    text = "Guardar vehículo",
+                    style = MaterialTheme.typography.labelLarge
+                )
             }
         }
+
+        Spacer(modifier = Modifier.height(16.dp))
     }
 }
+
 
 @Composable
 private fun VehicleBrandDropdown(
@@ -321,9 +453,11 @@ private fun VehicleBrandDropdown(
             readOnly = true,
             label = { Text("Marca") },
             placeholder = {
-                if (isLoading) Text("Cargando...")
-                else if (brands.isEmpty()) Text("No hay marcas disponibles")
-                else Text("Selecciona una marca")
+                when {
+                    isLoading -> Text("Cargando...")
+                    brands.isEmpty() -> Text("No hay marcas disponibles")
+                    else -> Text("Selecciona una marca")
+                }
             },
             modifier = Modifier
                 .menuAnchor()
@@ -338,7 +472,8 @@ private fun VehicleBrandDropdown(
                     ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
                 }
             },
-            enabled = !isLoading && brands.isNotEmpty()
+            enabled = !isLoading && brands.isNotEmpty(),
+            singleLine = true
         )
 
         if (brands.isNotEmpty()) {
@@ -396,7 +531,8 @@ private fun VehicleModelDropdown(
             trailingIcon = {
                 ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
             },
-            enabled = enabled && models.isNotEmpty()
+            enabled = enabled && models.isNotEmpty(),
+            singleLine = true
         )
 
         if (models.isNotEmpty()) {
@@ -440,7 +576,7 @@ private fun VehicleYearRangeDropdown(
             value = selectedYearRange?.let { "${it.fromYear} - ${it.toYear}" } ?: "",
             onValueChange = {},
             readOnly = true,
-            label = { Text("Año de caja") },
+            label = { Text("Año") },
             placeholder = {
                 when {
                     !enabled -> Text("Primero selecciona un modelo")
@@ -454,7 +590,8 @@ private fun VehicleYearRangeDropdown(
             trailingIcon = {
                 ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
             },
-            enabled = enabled && yearRanges.isNotEmpty()
+            enabled = enabled && yearRanges.isNotEmpty(),
+            singleLine = true
         )
 
         if (yearRanges.isNotEmpty()) {
@@ -471,6 +608,39 @@ private fun VehicleYearRangeDropdown(
                         }
                     )
                 }
+            }
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun EmptyStatePreview() {
+    MaterialTheme {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.DirectionsCar,
+                    contentDescription = null,
+                    modifier = Modifier.size(64.dp),
+                    tint = MaterialTheme.colorScheme.outline
+                )
+                Text(
+                    text = "No hay vehículos registrados",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    text = "Presiona + para agregar tu primer vehículo",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
     }

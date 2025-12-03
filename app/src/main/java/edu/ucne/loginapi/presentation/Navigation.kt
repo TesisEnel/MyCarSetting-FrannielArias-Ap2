@@ -25,8 +25,8 @@ sealed class AppDestination(val route: String) {
     object Dashboard : AppDestination("dashboard")
 
     object Maintenance : AppDestination("maintenance") {
-        fun createRoute(taskId: String? = null): String {
-            return if (taskId.isNullOrBlank()) {
+        fun createRoute(taskId: Int? = null): String {
+            return if (taskId == null) {
                 route
             } else {
                 "$route?taskId=$taskId"
@@ -40,6 +40,7 @@ sealed class AppDestination(val route: String) {
     object Chat : AppDestination("chat/{conversationId}") {
         fun createRoute(conversationId: String) = "chat/$conversationId"
     }
+
     object Services : AppDestination("services")
     object Profile : AppDestination("profile")
 }
@@ -89,7 +90,8 @@ fun MyCarSettingNavHost(
                 }
             )
         ) { backStackEntry ->
-            val taskId = backStackEntry.arguments?.getString("taskId")
+            val taskIdStr = backStackEntry.arguments?.getString("taskId")
+            val taskId = taskIdStr?.toIntOrNull()
             MaintenanceScreen(focusedTaskId = taskId)
         }
         composable(AppDestination.UserCar.route) {
@@ -108,10 +110,10 @@ fun MyCarSettingNavHost(
                     type = NavType.StringType
                 }
             )
-        ) { backStackEntry ->
-            val conversationId =
-                backStackEntry.arguments?.getString("conversationId") ?: "default_conversation"
-            ChatScreen(conversationId = conversationId)
+        ) {
+            ChatScreen(
+                onBack = { navController.popBackStack() }
+            )
         }
         composable(AppDestination.Profile.route) {
             ProfileScreen(

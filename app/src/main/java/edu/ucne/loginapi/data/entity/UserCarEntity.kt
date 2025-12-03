@@ -5,7 +5,8 @@ import androidx.room.PrimaryKey
 
 @Entity(tableName = "user_cars")
 data class UserCarEntity(
-    @PrimaryKey val id: String,
+    @PrimaryKey(autoGenerate = true)
+    val id: Int = 0,
     val brand: String,
     val model: String,
     val year: Int,
@@ -13,5 +14,6 @@ data class UserCarEntity(
     val fuelType: String,
     val usageType: String,
     val isCurrent: Boolean,
-    val remoteId: Long?
+    val remoteId: Int? = null,
+    val pendingSync: Boolean = false
 )

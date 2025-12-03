@@ -17,8 +17,8 @@ sealed interface MaintenanceEvent {
 
     data class OnNewSeveritySelected(val severity: MaintenanceSeverity) : MaintenanceEvent
 
-    data class OnCompleteTask(val taskId: String) : MaintenanceEvent
-    data class OnDeleteTask(val taskId: String) : MaintenanceEvent
+    data class OnCompleteTask(val taskId: Int) : MaintenanceEvent
+    data class OnDeleteTask(val taskId: Int) : MaintenanceEvent
     data class OnTaskClicked(val task: MaintenanceTask) : MaintenanceEvent
 
     object OnUserMessageShown : MaintenanceEvent
