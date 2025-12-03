@@ -82,7 +82,7 @@ interface CarApiService {
 interface MaintenanceApiService {
     @GET("api/cars/{carId}/tasks")
     suspend fun getTasksForCar(
-        @Path("carId") carId: String
+        @Path("carId") carId: Int
     ): Response<List<MaintenanceTaskDto>>
 
     @POST("api/tasks")
@@ -92,18 +92,18 @@ interface MaintenanceApiService {
 
     @PUT("api/tasks/{id}")
     suspend fun updateTask(
-        @Path("id") id: String,
+        @Path("id") id: Int,
         @Body request: UpdateMaintenanceTaskRequest
     ): Response<MaintenanceTaskDto>
 
     @DELETE("api/tasks/{id}")
     suspend fun deleteTask(
-        @Path("id") id: String
+        @Path("id") id: Int
     ): Response<Unit>
 
     @GET("api/cars/{carId}/history")
     suspend fun getHistoryForCar(
-        @Path("carId") carId: String
+        @Path("carId") carId: Int
     ): Response<List<MaintenanceHistoryDto>>
 
     @POST("api/history")
@@ -113,7 +113,7 @@ interface MaintenanceApiService {
 
     @DELETE("api/history/{id}")
     suspend fun deleteHistory(
-        @Path("id") id: String
+        @Path("id") id: Int
     ): Response<Unit>
 }
 
