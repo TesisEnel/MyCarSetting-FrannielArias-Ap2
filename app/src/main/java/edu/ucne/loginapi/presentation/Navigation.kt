@@ -110,15 +110,11 @@ fun MyCarSettingNavHost(
                     type = NavType.StringType
                 }
             )
-        ) { backStackEntry ->
-            val conversationId =
-                backStackEntry.arguments?.getString("conversationId") ?: "default"
+        ) {
             ChatScreen(
-                conversationId = conversationId,
                 onBack = { navController.popBackStack() }
             )
         }
-
         composable(AppDestination.Profile.route) {
             ProfileScreen(
                 onNavigateBack = { navController.popBackStack() },

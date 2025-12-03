@@ -1,4 +1,3 @@
-// MaintenanceViewModel.kt
 package edu.ucne.loginapi.presentation.maintenance
 
 import androidx.lifecycle.ViewModel
@@ -223,8 +222,7 @@ class MaintenanceViewModel @Inject constructor(
         )
 
         viewModelScope.launch {
-            val result = createMaintenanceTaskLocalUseCase(task)
-            when (result) {
+            when (val result = createMaintenanceTaskLocalUseCase(task)) {
                 is Resource.Success -> {
                     _state.update {
                         it.copy(
@@ -254,8 +252,7 @@ class MaintenanceViewModel @Inject constructor(
 
     private fun completeTask(taskId: Int) {
         viewModelScope.launch {
-            val result = markTaskCompletedUseCase(taskId, System.currentTimeMillis())
-            when (result) {
+            when (val result = markTaskCompletedUseCase(taskId, System.currentTimeMillis())) {
                 is Resource.Success -> {
                     _state.update { it.copy(userMessage = "Tarea completada") }
                     triggerMaintenanceSyncUseCase()
@@ -274,8 +271,7 @@ class MaintenanceViewModel @Inject constructor(
 
     private fun deleteTask(taskId: Int) {
         viewModelScope.launch {
-            val result = deleteMaintenanceTaskUseCase(taskId)
-            when (result) {
+            when (val result = deleteMaintenanceTaskUseCase(taskId)) {
                 is Resource.Success -> {
                     _state.update { it.copy(userMessage = "Tarea eliminada") }
                     triggerMaintenanceSyncUseCase()

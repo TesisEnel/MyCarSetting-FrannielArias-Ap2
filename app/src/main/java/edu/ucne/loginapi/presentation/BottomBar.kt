@@ -1,10 +1,10 @@
 package edu.ucne.loginapi.presentation
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Chat
+import androidx.compose.material.icons.automirrored.filled.Help
 import androidx.compose.material.icons.filled.CarRepair
-import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.Dashboard
-import androidx.compose.material.icons.filled.Help
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
@@ -37,12 +37,12 @@ private val bottomNavItems = listOf(
     BottomNavItem(
         destination = AppDestination.Manual,
         label = "Manual",
-        icon = Icons.Filled.Help
+        icon = Icons.AutoMirrored.Filled.Help
     ),
     BottomNavItem(
         destination = AppDestination.Chat,
         label = "Asistente",
-        icon = Icons.Filled.Chat
+        icon = Icons.AutoMirrored.Filled.Chat
     ),
     BottomNavItem(
         destination = AppDestination.Services,

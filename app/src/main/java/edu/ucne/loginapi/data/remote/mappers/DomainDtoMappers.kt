@@ -17,8 +17,6 @@ import edu.ucne.loginapi.data.remote.dto.VehicleBrandDto
 import edu.ucne.loginapi.data.remote.dto.VehicleModelDto
 import edu.ucne.loginapi.data.remote.dto.VehicleYearRangeDto
 import edu.ucne.loginapi.data.remote.dto.WarningLightDto
-import edu.ucne.loginapi.domain.model.ChatRole
-
 import edu.ucne.loginapi.domain.model.FuelType
 import edu.ucne.loginapi.domain.model.GuideArticle
 import edu.ucne.loginapi.domain.model.MaintenanceHistory
@@ -33,7 +31,6 @@ import edu.ucne.loginapi.domain.model.VehicleBrand
 import edu.ucne.loginapi.domain.model.VehicleModel
 import edu.ucne.loginapi.domain.model.VehicleYearRange
 import edu.ucne.loginapi.domain.model.WarningLight
-import java.util.UUID
 
 fun FuelType.toDto(): String = name
 
@@ -54,11 +51,6 @@ fun MaintenanceStatus.toDto(): String = name
 
 fun String.toMaintenanceStatus(): MaintenanceStatus =
     runCatching { MaintenanceStatus.valueOf(this) }.getOrElse { MaintenanceStatus.UPCOMING }
-
-fun ChatRole.toDto(): String = name
-
-fun String.toChatRole(): ChatRole =
-    runCatching { ChatRole.valueOf(this) }.getOrElse { ChatRole.ASSISTANT }
 
 fun UserCar.toDto(): UserCarDto =
     UserCarDto(
