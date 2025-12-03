@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
@@ -128,7 +127,6 @@ private fun MaintenanceHistoryContent(
                 )
             }
         }
-
         state.currentCar == null -> {
             Text(
                 text = "Configura un vehículo para ver el historial",
@@ -136,7 +134,6 @@ private fun MaintenanceHistoryContent(
                 style = MaterialTheme.typography.bodyLarge
             )
         }
-
         state.records.isEmpty() -> {
             Column(
                 modifier = modifier,
@@ -155,7 +152,6 @@ private fun MaintenanceHistoryContent(
                 )
             }
         }
-
         else -> {
             val filteredRecords = state.selectedType?.let { type ->
                 state.records.filter { it.taskType == type }
@@ -180,7 +176,7 @@ private fun MaintenanceHistoryList(
     records: List<MaintenanceHistory>,
     selectedType: MaintenanceType?,
     onSelectType: (MaintenanceType?) -> Unit,
-    onDelete: (String) -> Unit
+    onDelete: (Int) -> Unit
 ) {
     val monthFormatter = remember {
         SimpleDateFormat("MMMM yyyy", Locale.getDefault())
