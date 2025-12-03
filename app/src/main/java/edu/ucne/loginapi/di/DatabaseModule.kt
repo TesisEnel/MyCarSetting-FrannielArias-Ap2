@@ -8,7 +8,6 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import edu.ucne.loginapi.data.MyCarSettingDatabase
-import edu.ucne.loginapi.data.dao.ChatMessageDao
 import edu.ucne.loginapi.data.dao.MaintenanceHistoryDao
 import edu.ucne.loginapi.data.dao.MaintenanceTaskDao
 import edu.ucne.loginapi.data.dao.UserCarDao
@@ -49,9 +48,4 @@ object DatabaseModule {
         db: MyCarSettingDatabase
     ): MaintenanceHistoryDao = db.maintenanceHistoryDao
 
-    @Provides
-    @Singleton
-    fun provideChatMessageDao(
-        db: MyCarSettingDatabase
-    ): ChatMessageDao = db.chatMessageDao
 }
